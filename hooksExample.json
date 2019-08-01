@@ -1,0 +1,14 @@
+<<<<<<< HEAD
+{
+    "newsurl": "NEWS_URL_HERE/slack",
+    "agendaurl": "AGENDA_URL_HERE/slack"
+
+    // Make sure you have set these up in Server Settings, otherwise it will not work
+=======
+{
+    "newsurl": "NEWS_URL_HERE/slack",
+    "agendaurl": "AGENDA_URL_HERE/slack"
+
+    // Make sure you have set these up in Server Settings, otherwise it will not work
+>>>>>>> 3d500324eb827edb42362f3d0bd457111e5333fb
+}

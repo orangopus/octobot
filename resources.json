@@ -1,0 +1,172 @@
+{
+    "resources": [
+        {
+            "name": "FreeCodeCamp",
+            "type": "courses",
+            "description": null,
+            "link": "https://www.freecodecamp.com/"
+        },
+        {
+            "name": "Stack Overflow",
+            "type": "courses",
+            "description": "Question and answer website for programmers! It's 100% free.",
+            "link": "http://stackoverflow.com/"
+        },
+        {
+            "name": "Google Developers",
+            "type": "courses",
+            "description": "Google have created courses to help developers that are learning how to code. They are free!",
+            "link": "https://developers.google.com/training/"
+        },
+        {
+            "name": "Gravit Designer",
+            "type": "tools",
+            "description": "A cross-platform design tool for the 21st century.",
+            "link": "https://designer.io"
+        },
+        {
+            "name": "MIT",
+            "type": "courses",
+            "description": null,
+            "link": "http://ocw.mit.edu/index.htm"
+        },
+        {
+            "name": "CODE.org",
+            "type": "courses",
+            "description": "CODE focuses on bringing access to computer science to everyone. Learn free today!",
+            "link": "http://code.org/"
+        },
+        {
+            "name": "Scratch",
+            "type": "courses",
+            "description": "Scratch helps newcomers learn how to code in a creative way.",
+            "link": "http://scratch.mit.edu/"
+        },
+        {
+            "name": "Bento",
+            "type": "courses",
+            "description": "Learn to code the way professional programmers do! - Note: You need Google+ or Facebook to sign up",
+            "link": "http://bento.io/"
+        },
+        {
+            "name": "Codecademy",
+            "type": "courses",
+            "description": "Codecademy teaches you HTML/CSS, Java, jQuery, JavaScript, Ruby, Python and even APIs!",
+            "link": "https://codecademy.com"
+        },
+        {
+            "name": "Khan Academy",
+            "type": "courses",
+            "description": "While being able to learn mathematics too, Khan Academy can also teach you Computer programming!",
+            "link": "http://khanacademy.org/"
+        },
+        {
+            "name": "eDX",
+            "type": "courses",
+            "description": "eDX offers free online courses from the world's best universities. There are some official Microsoft courses you could try out. These are timed courses or self-paced. Depending on the course-giver.",
+            "link": "http://edx.org/"
+        },
+        {
+            "name": "Udacity",
+            "type": "courses",
+            "description": null,
+            "link": "https://www.udacity.com/courses/web-development/"
+        },
+        {
+            "name": "HTML5 Rocks",
+            "type": "courses",
+            "description": null,
+            "link": "http://www.html5rocks.com/en/"
+        },
+        {
+            "name": "Skillwise FREE Library",
+            "type": "courses",
+            "description": null,
+            "link": "https://www.skillwise.com/free"
+        },
+        {
+            "name": "Learn Code The Hard Way",
+            "type": "courses",
+            "description": null,
+            "link": "https://learncodethehardway.org"
+        },
+        {
+            "name": "Mozilla Developer Network",
+            "type": "courses",
+            "description": null,
+            "link": "https://developer.mozilla.org/en-US/Learn"
+        },
+        { 
+            "name": "Microsoft Virtual Academy", 
+            "type": "courses",
+            "description": null,
+            "link": "http://microsoftvirtualacademy.com/"
+        },
+        {
+            "name": "CodeCombat",
+            "type": "games",
+            "description": "CodeCombat helps you code by fighting monsters while teaching you about coding!",
+            "link": "http://codecombat.com"
+        },
+        {
+            "name": "CodeWars",
+            "type": "games",
+            "description": null,
+            "link": "https://www.codewars.com/"
+        },
+        {
+            "name": "CodinGame",
+            "type": "games",
+            "description": null,
+            "link": "https://www.codingame.com/"
+        },
+        {
+            "name": "CodePen",
+            "type": "playgrounds",
+            "description": "CodePen is a place where you can test your code in an interactive play area.  HTML, CSS, Javascript",
+            "link": "https://codepen.io"
+        },
+        {
+            "name": "Bootstrap",
+            "type": "frameworks",
+            "description": null,
+            "link": "http://getbootstrap.com/"
+        },
+        {
+            "name": "Electron",
+            "type": "frameworks",
+            "description": "Build cross-platform desktop applications wih JavaScript, HTML & CSS.",
+            "link": "https://electronjs.org/"
+        },
+        {
+            "name": "TechTerms",
+            "type": "terms",
+            "description": "TechTerms is a dictionary for geeks, nerds & programmers!",
+            "link": "https://techterms.com/"
+        },
+        {
+            "name": "CodeAnywhere",
+            "type": "editors",
+            "description": null,
+            "link": "https://codeanywhere.com"
+        },
+        {
+            "name": "Visual Studio Code",
+            "type": "editors",
+            "description": null,
+            "link": "https://code.visualstudio.com"
+        },
+        {
+            "name": "StackBlitz",
+            "type": "editors",
+            "description": "The online IDE for web applications. Powered by VS Code.",
+            "link": "https://stackblitz.com/"
+        },
+        {
+            "name": "Atom",
+            "type": "editors",
+            "description": "A hackable text editor for the 21st Century",
+            "link": "https://atom.io/"
+        }
+    ]
+}
