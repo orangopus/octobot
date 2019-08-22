@@ -1,5 +1,7 @@
 ![](banner.png)
 
+The development of this bot is currently inactive. If you would like to contribute to it, please submit a pull-request.
+
 `Submit an issue if you find a bug`
 
 Octobot is an extremely work-in-progress opensource bot.
