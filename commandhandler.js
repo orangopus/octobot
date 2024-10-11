@@ -1,109 +1,79 @@
-var path = require("path").join(__dirname, "commands");
-var loadedCommands = {}
-const needle = require("needle");
-var async = require("async");
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { REST, Routes } from 'discord.js';
 
-require("fs").readdirSync(path).forEach(function (file) {
-    try {
-        cfile = require("./commands/" + file);
-        loadedCommands[cfile.name] = cfile;
-    } catch (e) {
-        console.log(`Command File ${file} failed to load: ${e}`)
-    }
-});
+// Mimic __dirname in ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-handlerFunction = function (msg, bot, options) {
-    var label = msg.content.slice(options.prefix.length).split(" ")[0];
-    if (msg.content.startsWith(options.prefix) && loadedCommands[label]) {
-        var command = loadedCommands[label];
-        var args = msg.content.slice(options.prefix.length + label.length).slice(1).split(" ");
-        try {
-            var res = command.protocol(bot, msg, args, options);
-            if (res) bot.createMessage(msg.channel.id, res);
-        } catch (e) {
-            bot.createMessage(msg.channel.id,
+const commandPath = path.join(__dirname, 'commands');
+const loadedCommands = {};
+const commandList = [];
 
-                "📛 `Command failed to execute. Notify Cheese for errorlog.`"
-            ).catch(console.log);
-            console.log(e);
-        }
-    } else if (msg.content.startsWith(options.prefix) && label == 'help') {
-        var args = msg.content.slice(options.prefix.length + label.length).slice(1).split(" ");
-        if (args[0] == undefined || args[0] == "") {
-            cmds = Object.keys(loadedCommands).map(c => " `" + c + "`")
-            bot.getDMChannel(msg.author.id).then(chan => {
-                bot.createMessage(chan.id, 
-                    "__**Available Commands**__\n\n" + cmds + 
-                    "\n\nType `" + options.prefix + 
-                    "help <commandName>` on **" + 
-                    msg.channel.guild.name + "** for more info on that command.").catch(console.log);
-                bot.createMessage(msg.channel.id, 
-                    ":ok: `" + msg.author.username + ", check your messages!` :ok_hand:"
-                );
-            });
-        } else {
-            if (loadedCommands[args[0]]) {
-                command = loadedCommands[args[0]];
-                usa = options.prefix + command.name
-                if (command.usage) {
-                    usa = options.prefix + command.name + " " + command.usage
-                }
-                msg =
-                    "__**" + command.name + "**__" +
-                    "\n" + command.description +
-                    "\n**Usage**: " + usa
-                bot.createMessage(msg.channel.id, msg);
+// Load commands from the commands directory
+const loadCommands = async () => {
+    const files = fs.readdirSync(commandPath).filter(file => file.endsWith('.js')); // Only load .js files
+
+    for (const file of files) {
+        const command = (await import(path.join(commandPath, file))).default;
+
+        // Validate command structure
+        if (command && command.name && command.description && typeof command.execute === 'function') {
+            // Check for duplicate command names
+            if (loadedCommands[command.name]) {
+                console.warn(`Duplicate command name detected: ${command.name}`);
+                continue; // Skip duplicate commands
+            }
+
+            // Store command in loadedCommands
+            loadedCommands[command.name] = command;
+
+            // Add command data to commandList
+            if (command.data) {
+                commandList.push(command.data.toJSON());
+                console.log(`Loaded command: ${command.name}`);
             } else {
-                bot.createMessage(msg.channel.id,
-                    "That command couldn't be found!");
+                // Create a minimal command structure if missing
+                console.warn(`Command ${command.name} is missing the data field.`);
             }
+        } else {
+            console.warn(`Command file ${file} is missing required fields. Command:`, command);
         }
-    } else if (msg.content.startsWith(options.prefix) && label == 'eval') {
-        if (msg.author.id === options.owner) { // options.owner is changeable via bot.js
-            try {
-                var code = msg.content.slice(1 + "eval".length);
-                var result = eval(code);
-                bot.createMessage(msg.channel.id, 
-                    {
-                        embed: {
-                            author: {
-                                name: "Eval Input/Output",
-                                icon_url: "https://cdn.discordapp.com/avatars/"+bot.user.id+"/"+bot.user.avatar+".jpg"
-                            },
-                            content: "[]()",
-                            description: "**▶ Input:**\n" + "```js\n" + code + "```\n" + "**✅ Result:**\n```js\n" + result + "```",
-                            color: 0x1f9e4a
-                    }});
-            } catch (e) {
-                bot.createMessage(msg.channel.id, 
-                    {
-                        embed: {
-                            author: {
-                                name: "Eval Error",
-                                icon_url: "https://cdn.discordapp.com/avatars/"+bot.user.id+"/"+bot.user.avatar+".jpg"
-                            },
-                            content: "[]()",
-                            description: "```fix\n" + e + "```",
-                            color: 0xf33838
-                    }});
-            }
-        }
-    } else if (msg.content === "I've agreed to the etiquette" && msg.channel.name === "👋new-inklings") {
-        bot.addGuildMemberRole("544532292329144322", msg.author.id, "544534233872465937", "New member is now enrolled.");
-        bot.createMessage(msg.channel.id, {
-            embed: { 
-                author: { // Author property
-                    name: "Success! You have become an inkling!",
-                    icon_url: "https://cdn.discordapp.com/avatars/"+bot.user.id+"/"+bot.user.avatar+".jpg"
-                },
-                content: "[]()",
-                description: "Thanks for accepting the Code of Conduct!\n\n",
-                color: 15515667
-            }});
+    }
+};
+
+// Register global slash commands
+async function registerGlobalCommands(applicationID, token) {
+    const rest = new REST({ version: '10' }).setToken(token);
+
+    try {
+        // Register new commands
+        await rest.put(Routes.applicationCommands(applicationID), { body: commandList });
+        console.log('Successfully registered global commands.');
+    } catch (error) {
+        console.error('Error during command registration:', error);
     }
 }
 
-module.exports = {
-    exec: handlerFunction,
-    commands: loadedCommands
+// Handle slash commands
+async function handleSlashCommand(interaction) {
+    const { commandName } = interaction;
+
+    if (loadedCommands[commandName]) {
+        try {
+            await loadedCommands[commandName].execute(interaction);
+        } catch (error) {
+            console.error(`Error executing command ${commandName}:`, error);
+            await interaction.reply({ content: 'There was an error executing that command!', ephemeral: true });
+        }
+    } else {
+        await interaction.reply({ content: 'Unknown command!', ephemeral: true });
+    }
 }
+
+// Call loadCommands function to load all commands
+await loadCommands();
+
+// Export functions for use in your main bot file
+export { registerGlobalCommands, handleSlashCommand };
