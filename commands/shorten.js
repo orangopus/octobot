@@ -1,11 +1,11 @@
-const fetch = require('snekfetch');
-const util = require("util");
-var request = require("request");
+import fetch from 'snekfetch';
+import util from "util";
+import request from "request";
 
-command = {
+const command = {
   name: "shorten",
   description: "Shorten a URL using our custom Rebrandly shortlink.",
-  protocol: function (bot, msg, args, options) {
+  execute: function (bot, msg, args, options) {
     if (msg.member.roles.includes("250017997194788864")) {
       var urlHere = args.slice(0).join(" ");
       var slashHere = args.slice(1).join(" ");
@@ -70,4 +70,4 @@ command = {
   }
 }
 
-module.exports = command;
+export default command;

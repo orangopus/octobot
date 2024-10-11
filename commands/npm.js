@@ -1,9 +1,9 @@
-let request = require("snekfetch");
+import request from "snekfetch";
 
-module.exports = {
+const command = {
 	name: "npm",
 	description: "Get information about a NPM package.",
-	protocol: function(bot, msg, args, options){
+	execute: function(bot, msg, args, options){
 		if(!args[0]){
  	   		msg.channel.createMessage("No argument!");
   		}else{
@@ -84,3 +84,5 @@ module.exports = {
 			}
 	}
 };
+
+export default command;

@@ -1,9 +1,9 @@
-command = {
+const command = {
   name: "tableflip",
   description: "(╯°□°）╯︵ ┻━┻",
-  protocol: function(bot, msg, args, options){
-    return "*flips table* (╯°□°）╯︵ ┻━┻";
+  execute: async (interaction, msg, args, options) =>{
+    await interaction.reply("(╯°□°)╯︵ ┻━┻")
   }
 }
 
-module.exports = command;
+export default command;

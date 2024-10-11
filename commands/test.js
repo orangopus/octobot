@@ -1,38 +1,46 @@
-var request = require('snekfetch');
+import { EmbedBuilder } from 'discord.js';
 
-command = {
-  name: "test",
-  description: "Testing hooks",
-  protocol: function(bot, msg, args, options){
-    if (msg.member && msg.channel.guild.id == "81812480254291968") {
-    var memberAvatar = "https://cdn.discordapp.com/avatars/"+msg.member.user.id+"/"+msg.member.user.avatar+".jpg";
-    var n = msg.member.nick
-    if(msg.member.nick===null){ n = msg.member.user.username }
-     return msg.channel.id, {
-            embed: {
-                title: n, // Title of the embed
-                description: "Do not test me, " + msg.author.username+"!",
-                author: { // Author property
-                    name: msg.author.username,
-                    icon_url: msg.author.avatarURL
-                },
-                color: 0x008000, // Color, either in hex (show), or a base-10 integer
-                fields: [ // Array of field objects
+const command = {
+    name: "test",
+    description: "Testing hooks",
+    execute: async (interaction, bot, options) => {
+        // Check if the command is executed in the specified guild
+        if (interaction.guild.id === "909627161156132914") {
+            // Get member's avatar and nickname
+            const memberAvatar = `https://cdn.discordapp.com/avatars/${interaction.user.id}/${interaction.user.avatar}.jpg`;
+            let nickname = interaction.member.nickname;
+            if (!nickname) {
+                nickname = interaction.user.username; // Use username if no nickname is set
+            }
+
+            // Create an embed response
+            const embed = new EmbedBuilder()
+                .setTitle(nickname)
+                .setDescription(`Do not test me, ${interaction.user.username}!`)
+                .setAuthor({
+                    name: interaction.user.username,
+                    iconURL: memberAvatar,
+                })
+                .setColor(0x008000) // Green color
+                .addFields(
                     {
-                        name: "Some extra info.", // Field title
-                        value: "Some extra value.", // Field
-                        inline: true // Whether you want multiple fields in same line
+                        name: "Some extra info.",
+                        value: "Some extra value.",
+                        inline: true,
                     },
                     {
                         name: "Some more extra info.",
                         value: "Another extra value.",
-                        inline: true
+                        inline: true,
                     }
-                ]
-            }
-        }
-  }
- }
-}
+                );
 
-module.exports = command;
+            // Reply to the interaction with the embed
+            await interaction.reply({ embeds: [embed] });
+        } else {
+            await interaction.reply({ content: "This command can only be used in the specified guild.", ephemeral: true });
+        }
+    }
+};
+
+export default command;

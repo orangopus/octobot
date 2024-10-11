@@ -1,7 +1,7 @@
-command = {
+const command = {
   name: "students",
   description: "students",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     var enrolled = msg.channel.guild.members.filter(m => ~m.roles.indexOf("220875088600367105")).length;
     var projects = msg.channel.guild.members.filter(m => ~m.roles.indexOf("220874108353773568")).length;
     var guildCount = msg.channel.guild.memberCount;
@@ -18,4 +18,4 @@ command = {
   }
 }
 
-module.exports = command;
+export default command;

@@ -1,38 +1,32 @@
-var request = require('snekfetch');
+import { EmbedBuilder } from 'discord.js';
 
-command = {
-  name: "guild",
-  description: "Shows guild information via Webhooks",
-  protocol: function(bot, msg, args, options){
-    var guildMembers = "There are currently **"+msg.channel.guild.memberCount+" members** on this guild.";
-    var msgDate = new Date(msg.channel.guild.createdAt);
-    var guildAvatar = "https://discordapp.com/api/guilds/"+msg.channel.guild.id+"/icons/"+msg.channel.guild.icon+".jpg";
-    request.post('https://canary.discordapp.com/api/webhooks/233828282058014730/2Dcy1QS7ei9otTbhA6YiQBh9lw0m62TIWuKKefyStpXFzLwmF_4PLxXQuH1Hi6TMeEPG/slack')
-    .send(
-      {
-    "username": msg.member.guild.name,
-    "icon_url": guildAvatar,
-    "text": "[](invisible)",
-    "attachments": [
-      {
-        "color": "#face00",
-        "author_name": msg.member.guild.name+" Guild Information",
-        "author_icon": guildAvatar,
-        "pretext":
-        "```fix"
-        +"\n"+"       Region: "+msg.channel.guild.region.toUpperCase()
-        +"\n"+"      Members: "+msg.channel.guild.memberCount
-        +"\n"+"Text Channels: "+msg.channel.guild.channels.size
-        +"\n"+"  AFK Timeout: "+msg.channel.guild.afkTimeout + " seconds```",
-        "footer": msg.member.guild.name + " | Created on "+ msgDate,
-        "footer_icon": guildAvatar,
-      }
-    ]
-}
-    )
-    .end((err, res)=>{
-    });
-   }
-}
+import { SlashCommandBuilder } from 'discord.js';
 
-module.exports = command;
+const command = {
+    name: "guild",
+    description: "Shows guild information.",
+    execute: async (interaction) => {
+        const guild = interaction.guild; // Get the guild from the interaction
+        const memberCount = guild.memberCount; // Number of members in the guild
+        const msgDate = new Date(guild.createdAt); // Guild creation date
+        const guildAvatar = guild.iconURL() || ''; // Guild icon URL
+
+        // Create an embed to reply to the interaction
+        const embed = new EmbedBuilder()
+            .setTitle(`${guild.name} Guild Information`)
+            .setColor(0x0099ff)
+            .setDescription(`There are currently **${memberCount} members** in this guild.`)
+            .addFields(
+                { name: 'Region', value: guild.preferredLocale.toUpperCase(), inline: true }, // Preferred locale instead of region
+                { name: 'Text Channels', value: `${guild.channels.cache.filter(channel => channel.type === 0).size}`, inline: true }, // Count only text channels
+                { name: 'AFK Timeout', value: `${guild.afkTimeout} seconds`, inline: true }
+            )
+            .setFooter({ text: `Created on ${msgDate.toLocaleDateString()}` }) // Format date
+            .setThumbnail(guildAvatar); // Set guild avatar as thumbnail
+
+        // Reply to the interaction with the embed
+        await interaction.reply({ embeds: [embed] });
+    }
+};
+
+export default command;

@@ -4,13 +4,13 @@ function text2Binary(textChange) {
   }).join(' ');
 }
 
-command = {
+const command = {
   name: "ttb",
   description: "text to binary",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     var textChange = msg.content.slice(1+"ttb".length);
     bot.createMessage(msg.channel.id, "**:abcd: :arrow_forward: :zero: :one: Result:**"+ "```rb\n"+text2Binary(textChange)+"```");
   }
 }
 
-module.exports = command;
+export default command;

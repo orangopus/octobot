@@ -1,7 +1,7 @@
-command = {
+const command = {
   name: "game",
   description: "game",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     var gameChange = args.join(" ");
     if (msg.author.id === options.owner){  // options.owner is changeable via bot.js
         if (gameChange){
@@ -17,4 +17,4 @@ command = {
     }
   }
 }
-module.exports = command;
+export default command;

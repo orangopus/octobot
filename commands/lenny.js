@@ -1,10 +1,10 @@
-command = {
+const command = {
   name: "lenny",
   description: "( ͡° ͜ʖ ͡°)",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     return "( ͡° ͜ʖ ͡°)";
-    return console.log("Someone sent a lenny!");
+    console.log("Someone sent a lenny!");
   }
 }
 
-module.exports = command;
+export default command;

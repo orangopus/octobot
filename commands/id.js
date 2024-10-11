@@ -1,9 +1,9 @@
-var request = require('snekfetch');
+import request from "snekfetch";
 
-command = {
+const command = {
   name: "id",
   description: "id",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     if(args[0] === "beta"){
       var memberName = "ID: "+msg.member.user.username;
       var memberAvatar = "https://cdn.discordapp.com/avatars/"+msg.member.user.id+"/"+msg.member.user.avatar+".jpg";
@@ -55,4 +55,4 @@ command = {
   }
 }
 
-module.exports = command;
+export default command;

@@ -1,165 +1,172 @@
-var async = require('async');
-var request = require('snekfetch');
-var webhooks = require('../hooks.json'); 
-var _dutyHook = webhooks.agendaurl;
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import fetch from 'node-fetch';
+import webhooks from '../hooks.json' assert { type: 'json' };
 
-command = {
-  name: "duty",
-  description: "Changes available/unavailable duty.",
-  protocol: function(bot, msg, args, options, webhooks){
-    if (msg.member && msg.channel.guild.id == "81812480254291968") {
-    var memberAvatar = "https://cdn.discordapp.com/avatars/"+msg.member.user.id+"/"+msg.member.user.avatar+".jpg";
-    var reasonVar = args.slice(1).join(" ");
-    var n = msg.member.nick
-    if(msg.member.nick===null){ n = msg.author.username }
-    if(msg.member.roles.includes("250017997194788864")){
-      var currentRoles = msg.member.roles;
-      if (args[0] === "on"){
-        // adds available
-       bot.addGuildMemberRole("81812480254291968", msg.author.id, "226843141733351424", "");
-       // removes Unavailable
-       bot.removeGuildMemberRole("81812480254291968", msg.author.id, "226840328429109248", "");
-       //removes idle
-       bot.removeGuildMemberRole("81812480254291968", msg.author.id, "251170075141210112", "");
-      bot.createMessage(msg.channel.id, ":ok: `Duty status has been changed to available. Remember to clock off, "+n+"!`");
-      msg.channel.createMessage("",{},{
-      "color": 0x1f9e4a,
-      "fields": [{name: "🆗 `Duty status has been changed to available.`", value: "`Remember to clock off, "+n+"!`"}]
-      });
-      request.post(_dutyHook)
-      .send({
-      "username": "Duty Monitor",
-      "icon_url": memberAvatar,
-      "text": "[](invisible)",
-      "attachments": [
-        {
-          "color": "#1f9e4a",
-          "pretext": "**"+n+"** `("+msg.author.username+"#"+msg.member.user.discriminator+")` is now on duty!",
-          "thumb_url": memberAvatar,
-          "fields": [
-            {
-              "title": "**Note:** ",
-              "value": reasonVar == "" ? "`No note attached.`" : reasonVar,
-              "short": false
-            }
-        ],
-          "footer": "Timestamp ",
-          "ts": new Date().getTime() / 1000
+const _dutyHook = webhooks.agendaurl; // Webhook URL for duty updates
+
+const command = {
+    name: 'duty',
+    description: 'Changes available/unavailable duty with a reason.',
+    data: new SlashCommandBuilder()
+        .setName('duty')
+        .setDescription('Changes available/unavailable duty with a reason.')
+        .addStringOption(option =>
+            option.setName('status')
+                .setDescription('The duty status (on, idle, off)')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('reason')
+                .setDescription('Reason for the status change')
+                .setRequired(false)),
+    
+    async execute(interaction) {
+        const { member, guildId } = interaction;
+        const availableRoleId = "1293943779656601791";
+        const unavailableRoleId = "1293943830638493767";
+        const idleRoleId = "1293963252736462929";
+        const guildIdTarget = "909627161156132914"; // Replace with your guild ID
+        const targetChannelId = "1294260504369303594"; // Replace with your specific channel ID
+
+        const status = interaction.options.getString('status');
+        const reasonVar = interaction.options.getString('reason') || 'No reason provided';
+        const memberAvatar = member.user.displayAvatarURL();
+        const nickname = member.nickname || member.user.username;
+
+        await interaction.deferReply();
+
+        if (interaction.guildId !== guildIdTarget) {
+            return interaction.editReply({ content: "This command can only be used in the designated guild.", ephemeral: true });
         }
-      ]
-      })
-      .end((err, res)=>{
-      });
-      }
-      if (args[0] === "idle"){
-        // removes available
-       bot.removeGuildMemberRole("81812480254291968", msg.author.id, "226843141733351424", "");
-       // removes Unavailable
-       bot.removeGuildMemberRole("81812480254291968", msg.author.id, "226840328429109248", "");
-       //adds idle
-       bot.addGuildMemberRole("81812480254291968", msg.author.id, "251170075141210112", "");
-      bot.createMessage(msg.channel.id, ":ok: `Duty status has been changed to idle. Remember to clock off, "+n+"!`");
-      msg.channel.createMessage("",{},{
-      "color": 0x1f9e4a,
-      "fields": [{name: "🆗 `Duty status has been changed to idle.`", value: "`Remember to clock off, "+n+"!`"}]
-      });
-      request.post(_dutyHook)
-      .send({
-      "username": "Duty Monitor",
-      "icon_url": memberAvatar,
-      "text": "[](invisible)",
-      "attachments": [
-        {
-          "color": "#FFA500",
-          "pretext": "**"+n+"** `("+msg.author.username+"#"+msg.member.user.discriminator+")` is now idle!",
-          "thumb_url": memberAvatar,
-          "fields": [
-            {
-              "title": "**Note:** ",
-              "value": reasonVar == "" ? "`No note attached.`" : reasonVar,
-              "short": false
+
+        try {
+            if (status === 'on') {
+                await updateDutyStatus(member, availableRoleId, [unavailableRoleId, idleRoleId]);
+                await interaction.editReply(`:white_check_mark: \`Duty status changed to available. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``);
+                await postToWebhook(interaction, targetChannelId, `${nickname} is now on duty!`, memberAvatar, reasonVar, '#1f9e4a');
+
+            } else if (status === 'idle') {
+                await updateDutyStatus(member, idleRoleId, [availableRoleId, unavailableRoleId]);
+                await interaction.editReply(`:white_check_mark: \`Duty status changed to idle. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``);
+                await postToWebhook(interaction, targetChannelId, `${nickname} is now idle!`, memberAvatar, reasonVar, '#FFA500');
+
+            } else if (status === 'off') {
+                await updateDutyStatus(member, unavailableRoleId, [availableRoleId, idleRoleId]);
+                await interaction.editReply(`:white_check_mark: \`Duty status changed to unavailable. Reason: ${reasonVar}. Remember to clock on when you return, ${nickname}!\``);
+                await postToWebhook(interaction, targetChannelId, `${nickname} is now off duty!`, memberAvatar, reasonVar, '#f33838');
+
+            } else {
+                await displayCurrentDutyStatuses(interaction);
             }
-        ],
-          "footer": "Timestamp ",
-          "ts": new Date().getTime() / 1000
+        } catch (error) {
+            console.error('Error executing duty command:', error);
+            await interaction.editReply({ content: 'There was an error while executing the command.', ephemeral: true });
         }
-      ]
-      })
-      .end((err, res)=>{
-      });
-      }
-     if (args[0] === "off"){
-      // adds Unavailable
-      bot.addGuildMemberRole("81812480254291968", msg.author.id, "226840328429109248", "");
-      // removes available
-      bot.removeGuildMemberRole("81812480254291968", msg.author.id, "226843141733351424", "");
-      //removes idle
-      bot.removeGuildMemberRole("81812480254291968", msg.author.id, "251170075141210112", "");
-      bot.createMessage(msg.channel.id, ":ok: `Remember to clock on when you return, "+n+"!`");
-      msg.channel.createMessage("",{},{
-      "color": 0xf33838,
-      "fields": [{name: "🆗 `Duty status has been changed to unavailable.`", value: "`Remember to clock on when you return, "+n+"!`"}]
-      });
-      request.post(_dutyHook)
-      .send({
-      "username": "Duty Monitor",
-      "icon_url": memberAvatar,
-      "text": "[](invisible)",
-      "attachments": [
-        {
-          "color": "#f33838",
-          "pretext": "**"+n+"** `("+msg.author.username+"#"+msg.member.user.discriminator+")` is no longer on duty!",
-          "thumb_url": memberAvatar,
-          "fields": [
-            {
-              "title": "**Reason:** ",
-              "value": reasonVar == "" ? "`unspecified`" : reasonVar,
-              "short": false
-            }
-        ],
-          "footer": "Timestamp ",
-          "ts": new Date().getTime() / 1000
-        }
-      ]
-      })
-      .end((err, res)=>{
-      });
-      }
     }
-    if (args < 1){
-        var avresult = "";
-        var unresult = "";
-        var idleresult = "";
-        var membersAvailable = msg.channel.guild.members.filter(m => ~m.roles.indexOf("226843141733351424"));
-        var avCount = msg.channel.guild.members.filter(m => ~m.roles.indexOf("226843141733351424")).length;
-        var membersUnavailable = msg.channel.guild.members.filter(m => ~m.roles.indexOf("226840328429109248"));
-        var unCount = msg.channel.guild.members.filter(m => ~m.roles.indexOf("226840328429109248")).length;
-        var membersIdle = msg.channel.guild.members.filter(m => ~m.roles.indexOf("251170075141210112"));
-        var idleCount = msg.channel.guild.members.filter(m => ~m.roles.indexOf("251170075141210112")).length;
-        async.each(membersAvailable, (item, cb) => {
-        avresult += `🎓 **${item.user.username}**#${item.user.discriminator} - \`.id ${item.user.id}\`\n`
-        cb()
-        }, () => {
-        bot.createMessage(msg.channel.id,
-          "**__<:online:443611732418494484> TEAM MEMBERS ON DUTY__ ("+avCount+")** `⭐ Pro-Tip: Only ping staff if you absolutely need assistance.`\n"+avresult);
-        });
-        async.each(membersIdle, (item, cb) => {
-        idleresult += `🎓 **${item.user.username}**#${item.user.discriminator} - \`.id ${item.user.id}\`\n`
-       cb()
-        }, () => {
-        bot.createMessage(msg.channel.id,
-         "**__<:idle:443611732867284992> TEAM MEMBERS IDLE__ ("+idleCount+")** `⭐ Pro-Tip: Only ping them if their agenda says that you can.`\n"+idleresult);
-        });
-        async.each(membersUnavailable, (item, cb) => {
-        unresult += `🎓 **${item.user.username}**#${item.user.discriminator} - \`.id ${item.user.id}\`\n`
-        cb()
-        }, () => {
-        bot.createMessage(msg.channel.id,
-          "**__<:offline:443611732557168651> TEAM MEMBERS OFF DUTY__ ("+unCount+")** `⭐ Pro-Tip: Do not ping staff who are off-duty.`\n"+unresult);
-        });
-      }
+};
+
+// Helper function to update duty status
+async function updateDutyStatus(member, addRoleId, removeRoleIds) {
+    const guildMember = await member.guild.members.fetch(member.id);
+
+    for (const roleId of removeRoleIds) {
+        if (guildMember.roles.cache.has(roleId)) {
+            await guildMember.roles.remove(roleId).catch(console.error);
+        }
     }
-  }
+    await guildMember.roles.add(addRoleId).catch(console.error);
 }
-module.exports = command;
 
+async function createWebhook(channel) {
+    try {
+        const webhook = await channel.createWebhook({
+            name: 'Duty Monitor',
+            avatar: 'https://i.imgur.com/AfFp7pu.png', // Set your desired avatar URL
+        });
+        return webhook;
+    } catch (error) {
+        console.error('Error creating webhook:', error);
+        return null;
+    }
+}
+
+async function postToWebhook(interaction, targetChannelId, pretext, memberAvatar, reasonVar, color) {
+    const channel = await interaction.guild.channels.fetch(targetChannelId);
+    
+    if (!channel) {
+        console.log('Invalid channel or channel not found!');
+        return;
+    }
+
+    const webhooks = await channel.fetchWebhooks();
+    let webhook = webhooks.find(wh => wh.token);
+
+    if (!webhook) {
+        console.log('No webhook found, creating one...');
+        webhook = await createWebhook(channel);
+        if (!webhook) {
+            console.log('Failed to create a webhook.');
+            return; // Exit if we couldn't create a webhook
+        }
+    }
+
+    const embed = new EmbedBuilder()
+        .setTitle(pretext || "Duty Status")
+        .setDescription(`**Reason**: ${reasonVar || "No reason provided"}`)
+        .setColor(parseInt(color.replace('#', ''), 16))
+        .setFooter({ text: "Duty Status Update", iconURL: memberAvatar || "" })
+        .setTimestamp();
+
+    try {
+        await webhook.send({
+            content: ' ',
+            username: 'Duty Monitor',
+            avatarURL: memberAvatar || 'https://i.imgur.com/AfFp7pu.png',
+            embeds: [embed.toJSON()],
+        });
+        console.log("Successfully posted to the webhook.");
+    } catch (error) {
+        console.error('Failed to post to webhook:', error);
+    }
+}
+
+// Function to display current duty statuses
+async function displayCurrentDutyStatuses(interaction) {
+    try {
+        const availableRoleId = "1293943779656601791";
+        const idleRoleId = "1293963252736462929";
+        const unavailableRoleId = "1293943830638493767";
+
+        const guild = interaction.guild;
+
+        const availableRole = guild.roles.cache.get(availableRoleId);
+        const idleRole = guild.roles.cache.get(idleRoleId);
+        const unavailableRole = guild.roles.cache.get(unavailableRoleId);
+
+        if (!availableRole || !idleRole || !unavailableRole) {
+            return interaction.editReply({ content: 'Error: One or more duty roles do not exist in this server.', ephemeral: true });
+        }
+
+        const availableMembersList = availableRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
+        const idleMembersList = idleRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
+        const unavailableMembersList = unavailableRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
+
+        const dutyStatusEmbed = new EmbedBuilder()
+            .setColor('#0099ff')
+            .setTitle('Team Duty Statuses')
+            .setDescription('Here are the current duty statuses of the team members:')
+            .addFields(
+                { name: `**:green_circle: On Duty (${availableRole.members.size})**`, value: availableMembersList, inline: false },
+                { name: `**:yellow_circle: Idle (${idleRole.members.size})**`, value: idleMembersList, inline: false },
+                { name: `**:red_circle: Off Duty (${unavailableRole.members.size})**`, value: unavailableMembersList, inline: false }
+            )
+            .setTimestamp()
+            .setFooter({ text: 'Duty status updated', iconURL: guild.iconURL() });
+
+        await interaction.editReply({ embeds: [dutyStatusEmbed] });
+    } catch (error) {
+        console.error('Error displaying duty statuses:', error);
+        await interaction.editReply({ content: 'There was an error fetching duty statuses.', ephemeral: true });
+    }
+}
+
+export default command;

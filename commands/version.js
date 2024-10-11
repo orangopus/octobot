@@ -1,9 +1,9 @@
-command = {
+const command = {
   name: "version",
   description: "version",
-  protocol: function(bot, msg, args, options){
-    return "**Bot Version: **" + options.botVersion;
+  async execute(interaction, bot, options) {
+    await interaction.reply("uptimeMessage");
   }
-}
+};
 
-module.exports = command;
+export default command;

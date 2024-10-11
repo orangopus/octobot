@@ -1,7 +1,7 @@
-command = {
+const command = {
   name: "server",
   description: "server",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
     var msgDate = new Date(msg.channel.guild.createdAt);
     return "__**"+msg.channel.guild.name.toUpperCase() + "'S SERVER INFO:**__" + "\n"
     + "```ruby\n"
@@ -17,4 +17,4 @@ command = {
   }
 }
 
-module.exports = command;
+export default command;

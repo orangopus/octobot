@@ -1,7 +1,7 @@
-command = {
+const command = {
   name: "optin",
   description: "Acess specific activity zones.",
-  protocol: function(bot, msg, args, options){
+  execute: function(bot, msg, args, options){
       if (args[0] === "diy"){
       bot.addGuildMemberRole("81812480254291968", msg.author.id, "443589359715745813", "Member has been added to DIY.");
       bot.createMessage(msg.channel.id, ":ok: `You now have access to Cheese.lab DIY.`");
@@ -19,4 +19,4 @@ command = {
       }
     }
   }
-module.exports = command;
+export default command;
