@@ -5,7 +5,11 @@ import { SlashCommandBuilder } from 'discord.js';
 const command = {
     name: "guild",
     description: "Shows guild information.",
-    execute: async (interaction) => {
+    data: new SlashCommandBuilder()
+    .setName('guild')
+    .setDescription('Shows guild information.'),
+
+async execute(interaction) {
         const guild = interaction.guild; // Get the guild from the interaction
         const memberCount = guild.memberCount; // Number of members in the guild
         const msgDate = new Date(guild.createdAt); // Guild creation date

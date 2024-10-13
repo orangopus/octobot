@@ -1,11 +1,23 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 
 const command = {
     name: "about",
     description: "Shows information about the bot and server.",
-    // Make the execute function asynchronous
-    async execute(interaction, bot, options) {
-        // Create an embed for the response
+    data: new SlashCommandBuilder()
+        .setName('about')
+        .setDescription('Shows information about the bot and server.'),
+    
+    async execute(interaction) {
+        const bot = interaction.client; // Access the bot/client from the interaction
+        const options = {
+            botVersion: "0.0.4", // Example values, adjust accordingly
+            prefix: "/",
+            gameName: "Being Awesome"
+        };
+
+        // Defer the reply to avoid timing out the interaction
+        await interaction.deferReply();
+
         const embed = new EmbedBuilder()
             .setColor(16748861) // Color in hex
             .setAuthor({
@@ -25,12 +37,12 @@ const command = {
             )
             .setFooter({
                 text: "Coded with 🧡 by the Orangopus community.",
-                iconURL: "https://cdn.discordapp.com/icons/544532292329144322/e6ea9363d5466fa5a8661e1886107eb0.png"
+                iconURL: "https://orangop.us/img/logo.png"
             });
 
-        // Reply to the interaction with the embed
-        await interaction.reply({ embeds: [embed] });
+        // Edit the deferred reply with the embed
+        await interaction.editReply({ embeds: [embed] });
     }
 };
 
-export default command; // Use ES module export
+export default command;

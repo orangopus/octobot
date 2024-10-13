@@ -1,58 +1,47 @@
-import request from "snekfetch";
+import { SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 
 const command = {
-  name: "id",
-  description: "id",
-  execute: function(bot, msg, args, options){
-    if(args[0] === "beta"){
-      var memberName = "ID: "+msg.member.user.username;
-      var memberAvatar = "https://cdn.discordapp.com/avatars/"+msg.member.user.id+"/"+msg.member.user.avatar+".jpg";
-      var msgMemberDate = new Date(msg.member.user.createdAt);
-      var memberContent = "**Created:** "+msgMemberDate;
-      try {
-        embed = {
-          "username": memberName,
-          "text": memberContent,
-          "icon_url": memberAvatar
-        }
-      } catch (err) {
-        return;
-      } 
-    }
-    var member = msg.channel.guild.members.find((o) => {
-    if (o.user.username === args.join(" ") || o.user.id === args.join(" ") || o.user.mention === args.join(" ") || "<@!"+o.user.id+">" === args.join(" ")) return true
-    });
-    if (args[0] === "me") {
-    member = msg.member;
-    }
-    if (args < 1) {
-    member = msg.member;
-    }
-    var msgDate = new Date(member.joinedAt);
-    var msgCreated = new Date(member.user.createdAt);
-    var msgGame;
-    try {msgGame = "Playing "+member.game.name;}
-    catch(err) {msgGame = "N/A";}
-    var id = msg.content.slice(1 + "id".length);
-    var n = ''
-    if(member.nick!=null){ n = "\n"+"     Nickname: "+member.nick } // Cool look
-    var ro = []
-    ro = member.roles.map(r => msg.channel.guild.roles.find(m => m.id == r).name)
-    return "__**"+member.user.username.toUpperCase() + "'S OFFICIAL ID CARD - ACCESS CODE: #"+member.user.discriminator+"**__" + "\n"
-    + "```ruby\n"
-    +"\n"+"           ID: "+member.user.id
-    +"\n"+"         Name: "+member.user.username
-    +n
-    +"\n"+"Discriminator: "+member.user.discriminator
-    +"\n"+"       Status: "+member.status
-    +"\n"+" Current Game: "+msgGame
-    +"\n"+"          Bot: "+member.user.bot
-    +"\n"+"        Roles: "+ro
-    +"\n"+"       Joined: "+msg.channel.guild.name+" on "+msgDate
-    +"\n"+"      Created: "+msgCreated
-    +"\n"+"       Avatar: https://cdn.discordapp.com/avatars/"+member.user.id+"/"+member.user.avatar+".jpg "
-    + "```";
-  }
-}
+  name: 'id',
+  description: 'Get user ID information',
+  data: new SlashCommandBuilder()
+    .setName('id')
+    .setDescription('Get user ID information')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('User to get the ID for')
+        .setRequired(false)
+    ),
 
+  async execute(interaction) {
+    // Retrieve the user option or default to the command user
+    const userOption = interaction.options.getUser('user') || interaction.user;
+
+    // Fetch the member from the guild
+    const member = await interaction.guild.members.fetch(userOption.id);
+
+    // Create the embed
+    const embed = new EmbedBuilder()
+      .setTitle(`__**${member.user.username.toUpperCase()}'S OFFICIAL ID CARD - ACCESS CODE: #${member.user.discriminator}**__`)
+      .setColor('#0099ff')
+      .addFields(
+        { name: 'ID', value: member.user.id, inline: true },
+        { name: 'Name', value: member.user.username, inline: true },
+        { name: 'Status', value: member.presence?.status || 'offline', inline: true },
+        { name: 'Current Game', value: member.presence?.activities[0]?.name || 'N/A', inline: true },
+        { name: 'Bot', value: member.user.bot ? 'Yes' : 'No', inline: true },
+        { name: 'Roles', value: member.roles.cache.size > 0 ? member.roles.cache.map(role => role.name).join(', ') : 'None', inline: true },
+        { name: 'Joined', value: `${interaction.guild.name} on ${new Date(member.joinedAt).toLocaleDateString()}`, inline: true },
+        { name: 'Created', value: new Date(member.user.createdAt).toLocaleDateString(), inline: true },
+      )
+      .setThumbnail(member.user.displayAvatarURL())
+      .setTimestamp()
+      .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+
+    // Send the embed
+    await interaction.reply({ embeds: [embed] });
+  },
+};
+
+// Export the command
 export default command;

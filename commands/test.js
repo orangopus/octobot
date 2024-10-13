@@ -1,8 +1,11 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 
 const command = {
     name: "test",
     description: "Testing hooks",
+    data: new SlashCommandBuilder()
+    .setName('test')
+    .setDescription('Testing hooks'),
     execute: async (interaction, bot, options) => {
         // Check if the command is executed in the specified guild
         if (interaction.guild.id === "909627161156132914") {
@@ -42,5 +45,6 @@ const command = {
         }
     }
 };
+
 
 export default command;
