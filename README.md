@@ -64,7 +64,7 @@ experiment in our test-build and in-dev branches.
 
 **Make sure to do `npm init` to grab packages and dependencies.**
 
-`npm install` inside of the Octobot folder - Ignore work in progress things.
+`npm install` inside of the Octobot folder
 
 `pm2 start bot.js`
 
