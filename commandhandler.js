@@ -57,12 +57,12 @@ async function registerGlobalCommands(applicationID, token) {
 }
 
 // Handle slash commands
-async function handleSlashCommand(interaction) {
+async function handleSlashCommand(interaction, options) {
     const { commandName } = interaction;
 
     if (loadedCommands[commandName]) {
         try {
-            await loadedCommands[commandName].execute(interaction);
+            await loadedCommands[commandName].execute(interaction, options);
         } catch (error) {
             console.error(`Error executing command ${commandName}:`, error);
             await interaction.reply({ content: 'There was an error executing that command!', ephemeral: true });
