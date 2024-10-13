@@ -71,7 +71,3 @@ experiment in our test-build and in-dev branches.
 Don't worry if it errors or tells you about promise catches. That's fine, we're still actively fixing bugs.
 
 Submit a pull request if you want to fix something!
-
-## COMING SOON - Add Octobot to your own server
-
- Wait for production build soon. ~ We're looking into scalable VPS solutions. 
