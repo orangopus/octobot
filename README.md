@@ -12,8 +12,8 @@ Wrong branch? Check out our test-build instead. in-dev builds are extremely expe
 
 ## To-do:
 
-- [ ] Duty command
-  - [ ] Fix duty command and get idle features working
+- [X] Duty command
+  - [X] Fix duty command and get idle features working
 - [X] Debug mode
   - [X] Debugging checker
   - [X] Toggable mode via package.json (true/false)
