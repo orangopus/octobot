@@ -27,11 +27,11 @@ Wrong branch? Check out our test-build instead. in-dev builds are extremely expe
 **Platforms**
 
 ```
-Windows :Visual Studio Code (there's a launch.json file located in ./.vscode/)
+Windows :VS Code (there's a launch.json file located in ./.vscode/)
 ```
 
 ```
-Linux: Atom or command line. (Follow the Linux guide below)
+Linux: VS Code or command line. (Follow the Linux guide below)
 ```
 
 ## Contribute to our code (git)
