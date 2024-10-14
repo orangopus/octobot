@@ -31,27 +31,36 @@ const bot = new Client({
 bot.login(TOKEN);
 
 // Handle interactions
-app.post('/interactions', async (req, res) => {
+app.post('/api/interactions', async (req, res) => {
     const interaction = req.body;
 
-    // Respond to ping (type 1)
+    // Handle the interaction types
     if (interaction.type === 1) {
-        return res.send({ type: 1 }); // Respond with Pong
+        // Respond to a ping
+        return res.send({ type: 1 });
     }
 
-    // Handle slash commands (type 2)
-    if (interaction.type === 2) {
-        try {
-            await handleSlashCommand(interaction);
-            res.send({ type: 5 }); // Acknowledge the command
-        } catch (error) {
-            console.error('Error handling interaction:', error);
-            res.status(500).send({ content: 'There was an error processing your request.' });
+    if (interaction.type === 2) { // Slash command
+        const commandName = interaction.data.name;
+        const command = loadedCommands[commandName]; // Assuming loadedCommands is an object holding your commands
+
+        if (command) {
+            try {
+                await command.execute(interaction); // Execute the command
+                return res.sendStatus(200); // Send a success status
+            } catch (error) {
+                console.error(`Error executing command ${commandName}:`, error);
+                return res.status(500).json({ content: 'There was an error executing that command!' }); // Send error response
+            }
+        } else {
+            return res.status(404).json({ content: 'Unknown command!' }); // Command not found
         }
-    } else {
-        res.status(400).send({ content: 'Invalid interaction type.' });
     }
+
+    // If no matching type
+    return res.sendStatus(400); // Bad Request
 });
+
 
 // Start the server
 app.listen(PORT, () => {
