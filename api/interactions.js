@@ -1,5 +1,5 @@
 // /api/interactions.js
-import { loadCommands } from '../commandhandler.js'; // Adjust this path to your command handler file
+import { loadCommands } from './commandhandler.js'; // Adjust this path to your command handler file
 import { REST } from 'discord.js';
 
 let loadedCommands = {};
