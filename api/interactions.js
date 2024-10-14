@@ -1,8 +1,12 @@
 // /api/interactions.js
 import { loadCommands } from '../commandhandler.js'; // Adjust this path to your command handler file
+import { REST } from 'discord.js';
 
-// Load commands when the API is initialized
-const loadedCommands = await loadCommands();
+let loadedCommands = {};
+
+const loadCommands = async () => {
+    // Load commands logic here
+};
 
 export default async function handler(req, res) {
     // Log the incoming request body for debugging
@@ -15,14 +19,14 @@ export default async function handler(req, res) {
 
     const interaction = req.body;
 
-    // Check the type of interaction
+    // Respond to the PING request
     if (interaction.type === 1) {
-        // Respond to a ping
-        return res.json({ type: 1 });
+        return res.json({ type: 1 }); // Respond with a Pong
     }
 
-    if (interaction.type === 2) { // Slash command
-        const commandName = interaction.data.name;
+    // Handle command interactions (type 2)
+    if (interaction.type === 2) {
+        const commandName = interaction.data.name; // Get the command name from the request
         const command = loadedCommands[commandName];
 
         if (!command) {
@@ -30,10 +34,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            // Debugging log: check the interaction object
-            console.log('Executing command:', commandName);
-            console.log('Interaction data:', interaction);
-
+            // Create an interaction object to pass to the command
             const interactionResponse = {
                 reply: (response) => {
                     return res.json(response);
@@ -44,21 +45,22 @@ export default async function handler(req, res) {
                 },
                 client: {
                     user: {
-                        id: process.env.BOT_USER_ID,
+                        id: process.env.BOT_USER_ID, // Your bot's user ID
                     },
                 },
             };
 
-            await command.execute(interactionResponse);
+            // Execute the command and capture the response
+            const commandResponse = await command.execute(interactionResponse);
+            
+            // Send the command response
+            return res.json(commandResponse); // Send the response from the command back to Discord
         } catch (error) {
             console.error(`Error executing command ${commandName}:`, error);
             return res.status(500).json({ content: 'There was an error executing that command!' });
         }
-
-        return res.sendStatus(200); // Successfully handled the interaction
     }
 
     // If type is not recognized, return an error
     return res.status(400).json({ error: 'Invalid interaction type' });
 }
-
