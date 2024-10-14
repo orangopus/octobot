@@ -1,13 +1,9 @@
 // /api/interactions.js
-import { loadCommands } from '../commandhandler.js'; // Adjust this path to your command handler file
-import { REST } from 'discord.js';
+import { loadCommands } from '../commandhandler.js'; // Adjust this path as necessary
+import { loadedCommands } from '../commandhandler.js'; // Ensure this exports loaded commands
 
-let loadedCommands = {}; // Initialize loadedCommands
-
-// Load commands once when the module is loaded
-(async () => {
-    loadedCommands = await loadCommands();
-})();
+// Load commands when the server starts
+loadCommands();
 
 export default async function handler(req, res) {
     // Check if the request method is POST
@@ -15,7 +11,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { type, data, id, guild_id, member } = req.body;
+    const { type, data } = req.body;
 
     // Respond to the PING request
     if (type === 1) {
@@ -25,7 +21,7 @@ export default async function handler(req, res) {
     // Handle command interactions (type 2)
     if (type === 2) {
         const commandName = data.name; // Get the command name from the request
-        const command = loadedCommands[commandName];
+        const command = loadedCommands[commandName]; // Check if command exists
 
         if (!command) {
             return res.status(404).json({ content: 'Unknown command!' });
@@ -37,9 +33,9 @@ export default async function handler(req, res) {
                 reply: (response) => {
                     return res.json(response);
                 },
-                member: member,
+                member: req.body.member,
                 guild: {
-                    id: guild_id,
+                    id: req.body.guild_id,
                 },
                 client: {
                     user: {
