@@ -4,10 +4,6 @@ import { REST } from 'discord.js';
 
 let loadedCommands = {};
 
-const loadCommands = async () => {
-    // Load commands logic here
-};
-
 export default async function handler(req, res) {
     // Log the incoming request body for debugging
     console.log('Received interaction:', req.body);
@@ -60,6 +56,8 @@ export default async function handler(req, res) {
             return res.status(500).json({ content: 'There was an error executing that command!' });
         }
     }
+
+    await loadCommands();
 
     // If type is not recognized, return an error
     return res.status(400).json({ error: 'Invalid interaction type' });
