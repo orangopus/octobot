@@ -1,5 +1,6 @@
 import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
+import { loadCommands } from './commandhandler'; // A function to load commands
 
 const app = express();
 app.use(express.json());
