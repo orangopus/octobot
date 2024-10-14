@@ -1,6 +1,6 @@
 import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
-import { loadCommands } from './commandhandler.js'; // A function to load commands
+import { loadCommands } from './commandhandler.js'; // Function to load commands
 
 const app = express();
 app.use(express.json());
@@ -17,21 +17,23 @@ const bot = new Client({
 // Load commands dynamically
 const loadedCommands = {};
 
+// Handle API interactions
 app.post('/api/interactions', async (req, res) => {
     const interaction = req.body;
 
+    // Respond to a ping
     if (interaction.type === 1) {
-        return res.send({ type: 1 }); // Respond to a ping
+        return res.send({ type: 1 });
     }
 
-    if (interaction.type === 2) { // Handle slash commands
+    // Handle slash commands
+    if (interaction.type === 2) {
         const commandName = interaction.data.name;
         const command = loadedCommands[commandName];
 
         if (command) {
             try {
                 await command.execute(interaction);
-                return; // Exit after executing the command
             } catch (error) {
                 console.error(`Error executing command ${commandName}:`, error);
                 return res.status(500).json({ content: 'There was an error executing that command!' });
@@ -47,7 +49,7 @@ app.post('/api/interactions', async (req, res) => {
 // Connect the bot and load commands
 (async () => {
     await loadCommands();
-    await bot.login(process.env.TOKEN); // Make sure your token is set in the environment variables
+    await bot.login(process.env.TOKEN); // Ensure your token is set in the environment variables
 })();
 
 // Start the server

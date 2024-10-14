@@ -34,7 +34,6 @@ const loadCommands = async () => {
                 commandList.push(command.data.toJSON());
                 console.log(`Loaded command: ${command.name}`);
             } else {
-                // Create a minimal command structure if missing
                 console.warn(`Command ${command.name} is missing the data field.`);
             }
         } else {
@@ -72,7 +71,7 @@ async function handleSlashCommand(interaction, options) {
     }
 }
 
-// Call loadCommands function to load all commands
+// Load commands on startup
 await loadCommands();
 
 // Export functions for use in your main bot file
