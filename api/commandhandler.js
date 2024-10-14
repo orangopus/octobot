@@ -75,4 +75,4 @@ async function handleSlashCommand(interaction, options) {
 await loadCommands();
 
 // Export functions for use in your main bot file
-export { registerGlobalCommands, loadedCommands, handleSlashCommand };
+export { registerGlobalCommands, loadCommands, handleSlashCommand };
