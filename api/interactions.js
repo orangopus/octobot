@@ -25,10 +25,6 @@ export default async function handler(req, res) {
         const commandName = interaction.data.name; // Get the command name from the request
         const command = loadedCommands[commandName];
 
-        if (!command) {
-            return res.status(404).json({ content: 'Unknown command!' });
-        }
-
         try {
             // Create an interaction object to pass to the command
             const interactionResponse = {
