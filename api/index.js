@@ -28,21 +28,6 @@ const bot = new Client({
     await registerGlobalCommands(APPLICATION_ID, TOKEN);
 })();
 
-// Slash Command Handling
-app.post('/interactions', async (req, res) => {
-    const interaction = req.body;
-
-    if (interaction.type === 1) {
-        // Respond to a ping
-        return res.send({ type: 1 });
-    }
-
-    if (interaction.type === 2) { // Slash command
-        await handleSlashCommand(interaction);
-        res.send({ type: 5 }); // Acknowledge the command
-    }
-});
-
 // Connect the bot
 bot.login(TOKEN);
 
