@@ -2,8 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { registerGlobalCommands, handleSlashCommand } from '../commandhandler.js';
-import packBuild from './package.json' assert { type: 'json' };
-import tokenData from './token.json' assert { type: 'json' };
+import packBuild from '../../package.json' assert { type: 'json' };
 import axios from 'axios';
 
 // Constants
