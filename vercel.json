@@ -1,8 +1,0 @@
-{
-    "functions": {
-        "api/interactions.js": {
-            "runtime": "nodejs18.0",
-            "maxDuration": 10
-        }
-    }
-}
