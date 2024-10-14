@@ -5,26 +5,24 @@ import { loadCommands } from '../commandhandler.js'; // Adjust this path to your
 const loadedCommands = await loadCommands();
 
 export default async function handler(req, res) {
+    // Log the incoming request body for debugging
+    console.log('Received interaction:', req.body);
+
     // Check if the request method is POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Check if the Content-Type is application/json
-    if (req.headers['content-type'] !== 'application/json') {
-        return res.status(415).json({ error: 'Unsupported Media Type. Please use application/json.' });
+    const interaction = req.body;
+
+    // Check the type of interaction
+    if (interaction.type === 1) {
+        // Respond to a ping
+        return res.json({ type: 1 });
     }
 
-    const { type, data, id, guild_id, member } = req.body;
-
-    // Respond to the PING request
-    if (type === 1) {
-        return res.json({ type: 1 }); // Respond with a Pong
-    }
-
-    // Handle command interactions (type 2)
-    if (type === 2) {
-        const commandName = data.name; // Get the command name from the request
+    if (interaction.type === 2) { // Slash command
+        const commandName = interaction.data.name;
         const command = loadedCommands[commandName];
 
         if (!command) {
@@ -32,30 +30,35 @@ export default async function handler(req, res) {
         }
 
         try {
-            // Create an interaction object to pass to the command
-            const interaction = {
+            // Debugging log: check the interaction object
+            console.log('Executing command:', commandName);
+            console.log('Interaction data:', interaction);
+
+            const interactionResponse = {
                 reply: (response) => {
                     return res.json(response);
                 },
-                member: member,
+                member: interaction.member,
                 guild: {
-                    id: guild_id,
+                    id: interaction.guild_id,
                 },
                 client: {
                     user: {
-                        id: process.env.BOT_USER_ID, // Your bot's user ID
+                        id: process.env.BOT_USER_ID,
                     },
                 },
             };
 
-            // Execute the command
-            await command.execute(interaction);
+            await command.execute(interactionResponse);
         } catch (error) {
             console.error(`Error executing command ${commandName}:`, error);
             return res.status(500).json({ content: 'There was an error executing that command!' });
         }
+
+        return res.sendStatus(200); // Successfully handled the interaction
     }
 
     // If type is not recognized, return an error
     return res.status(400).json({ error: 'Invalid interaction type' });
 }
+
