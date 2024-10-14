@@ -17,15 +17,6 @@ const bot = new Client({
 // Load commands dynamically
 const loadedCommands = {};
 
-// Load command files
-const loadCommands = async () => {
-    const commandFiles = ['./commands/about.js', './commands/test2.js']; // Add all command paths here
-    for (const file of commandFiles) {
-        const command = (await import(file)).default;
-        loadedCommands[command.name] = command;
-    }
-};
-
 app.post('/api/interactions', async (req, res) => {
     const interaction = req.body;
 
