@@ -1,5 +1,5 @@
 // /api/interactions.js
-import { loadedCommands } from '../commands'; // Adjust this path to your command handler file
+import { loadedCommands } from './commands'; // Adjust this path to your command handler file
 import { REST } from 'discord.js';
 
 export default async function handler(req, res) {
