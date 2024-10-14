@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const commandPath = path.join(__dirname, 'commands');
+const commandPath = path.join(__dirname, '/commands');
 const loadedCommands = {};
 
 export const loadCommands = async () => {
