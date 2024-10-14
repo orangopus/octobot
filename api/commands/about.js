@@ -16,7 +16,6 @@ const command = {
         };
 
         // Defer the reply to avoid timing out the interaction
-        await interaction.deferReply();
 
         try {
             const embed = new EmbedBuilder()
