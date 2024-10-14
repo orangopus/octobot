@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 
-const command = {
+export default {
     name: 'test2',
     description: '2nd test for Vercel Serverless Functions.',
     data: new SlashCommandBuilder()
@@ -24,5 +24,3 @@ const command = {
         }
     },
 };
-
-export default command;
