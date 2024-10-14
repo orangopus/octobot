@@ -6,7 +6,7 @@
   "main": "bot.js",
   "type": "module",
   "scripts": {
-    "test": "pm2 start bot.js"
+    "build": "pm2 start bot.js"
   },
   "author": "Orangopus",
   "license": "MIT",
