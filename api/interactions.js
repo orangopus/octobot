@@ -23,7 +23,7 @@ app.post('/api/interactions', async (req, res) => {
 
     // Respond to a ping
     if (interaction.type === 1) {
-        return res.send({ type: 1 });
+        res.send({ type: 1 });
     }
 
     // Handle slash commands
@@ -36,14 +36,14 @@ app.post('/api/interactions', async (req, res) => {
                 await command.execute(interaction);
             } catch (error) {
                 console.error(`Error executing command ${commandName}:`, error);
-                return res.status(500).json({ content: 'There was an error executing that command!' });
+                res.status(500).json({ content: 'There was an error executing that command!' });
             }
         } else {
-            return res.status(404).json({ content: 'Unknown command!' });
+            res.status(404).json({ content: 'Unknown command!' });
         }
     }
 
-    return res.sendStatus(400); // Bad Request if no matching type
+    res.sendStatus(400); // Bad Request if no matching type
 });
 
 // Connect the bot and load commands
