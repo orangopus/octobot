@@ -1,11 +1,18 @@
 // /api/interactions.js
 import { loadCommands } from '../commandhandler.js'; // Adjust this path to your command handler file
-import { REST } from 'discord.js';
+
+// Load commands when the API is initialized
+const loadedCommands = await loadCommands();
 
 export default async function handler(req, res) {
     // Check if the request method is POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Check if the Content-Type is application/json
+    if (req.headers['content-type'] !== 'application/json') {
+        return res.status(415).json({ error: 'Unsupported Media Type. Please use application/json.' });
     }
 
     const { type, data, id, guild_id, member } = req.body;
