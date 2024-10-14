@@ -49,7 +49,7 @@ app.post('/api/interactions', async (req, res) => {
 
 // Connect the bot and load commands
 (async () => {
-    await loadedCommands(); // Ensure loaded commands are set correctly
+    await loadCommands(); // Ensure loaded commands are set correctly
     await bot.login(process.env.TOKEN); // Ensure your token is set in the environment variables
 })();
 
