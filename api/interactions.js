@@ -1,6 +1,6 @@
 // /api/interactions.js
-import { loadCommands } from 'commandhandler.js'; // Adjust this path as necessary
-import { loadedCommands } from 'commandhandler.js'; // Ensure this exports loaded commands
+import { loadCommands } from './commandhandler.js'; // Adjust this path as necessary
+import { loadedCommands } from './commandhandler.js'; // Ensure this exports loaded commands
 
 // Load commands when the server starts
 loadCommands();
