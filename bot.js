@@ -2,11 +2,10 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import fs from 'fs';
 import { registerGlobalCommands, handleSlashCommand } from './commandhandler.js';
 import packBuild from './package.json' assert { type: 'json' };
-import tokenData from './token.json' assert { type: 'json' };
 import command, { onMessage } from './commands/oranges.js'; // Adjust the path according to your project structure
 
 const _VERSION = "v" + packBuild.version;
-const _TOKEN = tokenData.token;
+const _TOKEN = process.env.TOKEN
 const ownerID = "697134824049082438";
 const applicationID = "1101246274004590603";
 
