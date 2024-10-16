@@ -35,31 +35,34 @@ const commandList = [];
 
 // Middleware to capture raw body for Discord interactions
 app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async (req, res) => {
-    const interaction = req.body; // Use raw body for interaction
+  const interaction = req.body;
 
-    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-        const commandName = interaction.data.name;
+  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+      const commandName = interaction.data.name;
 
-        if (loadedCommands[commandName]) {
-            try {
-                await loadedCommands[commandName].execute(interaction); // Execute the loaded command
-                res.send({
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        content: `Executed command: ${commandName}`,
-                    },
-                });
-            } catch (error) {
-                console.error(`Error executing command ${commandName}:`, error);
-                res.send({ content: 'There was an error executing that command!', ephemeral: true });
-            }
-        } else {
-            res.sendStatus(400); // If the command is not recognized
-        }
-    } else {
-        res.sendStatus(400); // Optional: handle other interaction types
-    }
+      if (loadedCommands[commandName]) {
+          try {
+              // Acknowledge the interaction with a deferred response
+              await res.send({
+                  type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+              });
+
+              // Execute the loaded command
+              await loadedCommands[commandName].execute(interaction);
+          } catch (error) {
+              console.error(`Error executing command ${commandName}:`, error);
+              await res.send({ content: 'There was an error executing that command!', ephemeral: true });
+          }
+      } else {
+          console.error(`Unknown command: ${commandName}`);
+          return res.sendStatus(400); // If the command is not recognized
+      }
+  } else {
+      console.error('Unsupported interaction type:', interaction.type);
+      return res.sendStatus(400); // Optional: handle other interaction types
+  }
 });
+
 
 // Log in and start the server
 client.login(process.env.TOKEN).then(async () => {
