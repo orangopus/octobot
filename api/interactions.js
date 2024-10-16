@@ -31,7 +31,7 @@ const commandList = [];
 
 // Middleware to capture raw body for Discord interactions
 app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), (req, res) => {
-    const interaction = JSON.parse(req.rawBody); // Use raw body for interaction
+    const interaction = JSON.parse(req.body); // Use raw body for interaction
 
     if (interaction.type === InteractionType.APPLICATION_COMMAND) {
         // Check the command name to handle specific commands
