@@ -36,9 +36,7 @@ const command = {
         const status = interaction.data.options?.find(option => option.name === 'status')?.value;
         const reasonVar = interaction.data.options?.find(option => option.name === 'reason')?.value || 'No reason provided';
         const memberAvatar = client.user.displayAvatarURL();
-        const nickname = client.member.user.nickname || client.member.user.username;
-
-        await interaction.deferReply();
+        const nickname = client.user.nickname || client.user.username;
 
         if (interaction.guildId !== guildIdTarget) {
             return interaction.editReply({ content: "This command can only be used in the designated guild.", ephemeral: true });
