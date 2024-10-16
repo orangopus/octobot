@@ -26,7 +26,7 @@ const command = {
                 .setRequired(false)),
     
     async execute(interaction, client) {
-        const { member, guildId } = interaction;
+        const { member, guildId, token } = interaction;
         const availableRoleId = "1293943779656601791";
         const unavailableRoleId = "1293943830638493767";
         const idleRoleId = "1293963252736462929";
@@ -35,38 +35,59 @@ const command = {
 
         const status = interaction.data.options?.find(option => option.name === 'status')?.value;
         const reasonVar = interaction.data.options?.find(option => option.name === 'reason')?.value || 'No reason provided';
-        const memberAvatar = client.user.displayAvatarURL();
-        const nickname = client.user.nickname || client.user.username;
+        const memberAvatar = member.user.displayAvatarURL();
+        const nickname = member.nickname || member.user.username;
 
         if (interaction.guildId !== guildIdTarget) {
-            return interaction.editReply({ content: "This command can only be used in the designated guild.", ephemeral: true });
+            // Sending a response indicating that the command can only be used in the designated guild
+            return sendResponse(token, { content: "This command can only be used in the designated guild.", ephemeral: true });
         }
 
         try {
+            let responseMessage;
+
             if (status === 'on') {
                 await updateDutyStatus(member, availableRoleId, [unavailableRoleId, idleRoleId]);
-                await interaction.editReply(`:white_check_mark: \`Duty status changed to available. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``);
+                responseMessage = `:white_check_mark: \`Duty status changed to available. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
                 await postToWebhook(interaction, targetChannelId, `${nickname} is now on duty!`, memberAvatar, reasonVar, '#1f9e4a');
 
             } else if (status === 'idle') {
                 await updateDutyStatus(member, idleRoleId, [availableRoleId, unavailableRoleId]);
-                await interaction.editReply(`:white_check_mark: \`Duty status changed to idle. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``);
+                responseMessage = `:white_check_mark: \`Duty status changed to idle. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
                 await postToWebhook(interaction, targetChannelId, `${nickname} is now idle!`, memberAvatar, reasonVar, '#FFA500');
 
             } else if (status === 'off') {
                 await updateDutyStatus(member, unavailableRoleId, [availableRoleId, idleRoleId]);
-                await interaction.editReply(`:white_check_mark: \`Duty status changed to unavailable. Reason: ${reasonVar}. Remember to clock on when you return, ${nickname}!\``);
+                responseMessage = `:white_check_mark: \`Duty status changed to unavailable. Reason: ${reasonVar}. Remember to clock on when you return, ${nickname}!\``;
                 await postToWebhook(interaction, targetChannelId, `${nickname} is now off duty!`, memberAvatar, reasonVar, '#f33838');
 
             } else {
-                await displayCurrentDutyStatuses(interaction);
+                await displayCurrentDutyStatuses(interaction); // This needs to be modified similarly for response
+                return; // Exit to avoid sending multiple responses
             }
+
+            // Send the response
+            await sendResponse(token, { content: responseMessage });
         } catch (error) {
             console.error('Error executing duty command:', error);
-            await interaction.editReply({ content: 'There was an error while executing the command.', ephemeral: true });
+            await sendResponse(token, { content: 'There was an error while executing the command.', ephemeral: true });
         }
     }
 };
+
+// Function to send response to interaction
+async function sendResponse(token, data) {
+    await fetch(`https://discord.com/api/v10/interactions/${interaction.id}/${token}/callback`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: InteractionResponseType.ChannelMessageWithSource,
+            data: data,
+        }),
+    });
+}
 
 // Helper functions remain unchanged
 async function updateDutyStatus(member, addRoleId, removeRoleIds) {
