@@ -65,7 +65,6 @@ app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async
 client.login(process.env.TOKEN).then(async () => {
     await loadCommands(); // Ensure you call your loadCommands function
     await registerGlobalCommands(client.application.id, process.env.TOKEN); // Pass application ID and token
-
     app.listen(8999, () => {
         console.log('Example app listening at http://localhost:8999');
         console.log('Guild ID:', process.env.GUILD_ID); // Debugging
