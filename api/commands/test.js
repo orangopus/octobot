@@ -1,27 +1,21 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 
 const command = {
     name: "test",
     description: "Testing hooks",
-    data: new SlashCommandBuilder()
-    .setName('test')
-    .setDescription('Testing hooks'),
-    execute: async (interaction, bot, options) => {
+    execute: async (interaction, guild) => {
         // Check if the command is executed in the specified guild
-        if (interaction.guild.id === "909627161156132914") {
+        if (guild.id === "909627161156132914") {
             // Get member's avatar and nickname
-            const memberAvatar = `https://cdn.discordapp.com/avatars/${interaction.user.id}/${interaction.user.avatar}.jpg`;
-            let nickname = interaction.member.nickname;
-            if (!nickname) {
-                nickname = interaction.user.username; // Use username if no nickname is set
-            }
+            const memberAvatar = `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.jpg`;
+            let nickname = interaction.member.nick || interaction.member.user.username;
 
             // Create an embed response
             const embed = new EmbedBuilder()
                 .setTitle(nickname)
-                .setDescription(`Do not test me, ${interaction.user.username}!`)
+                .setDescription(`Do not test me, ${interaction.member.user.username}!`)
                 .setAuthor({
-                    name: interaction.user.username,
+                    name: interaction.member.user.username,
                     iconURL: memberAvatar,
                 })
                 .setColor(0x008000) // Green color
@@ -38,13 +32,30 @@ const command = {
                     }
                 );
 
-            // Reply to the interaction with the embed
-            await interaction.reply({ embeds: [embed] });
+            // Respond with the embed
+            await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bot ${process.env.TOKEN}`
+                },
+                body: JSON.stringify({
+                    embeds: [embed]
+                })
+            });
         } else {
-            await interaction.reply({ content: "This command can only be used in the specified guild.", ephemeral: true });
+            await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bot ${process.env.TOKEN}`
+                },
+                body: JSON.stringify({
+                    content: "This command can only be used in the specified guild."
+                })
+            });
         }
     }
 };
-
 
 export default command;

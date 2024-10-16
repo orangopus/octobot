@@ -1,6 +1,12 @@
+import express from 'express';
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import fetch from 'node-fetch';
 import webhooks from '../../hooks.json' assert { type: 'json' };
+import { InteractionType, InteractionResponseType, verifyKeyMiddleware } from 'discord-interactions';
+
+// Initialize the Express app
+const app = express();
+app.use(express.json()); // Middleware to parse JSON body
 
 const _dutyHook = webhooks.agendaurl; // Webhook URL for duty updates
 
@@ -19,7 +25,7 @@ const command = {
                 .setDescription('Reason for the status change')
                 .setRequired(false)),
     
-    async execute(interaction) {
+    async execute(interaction, client) {
         const { member, guildId } = interaction;
         const availableRoleId = "1293943779656601791";
         const unavailableRoleId = "1293943830638493767";
@@ -27,10 +33,10 @@ const command = {
         const guildIdTarget = "909627161156132914"; // Replace with your guild ID
         const targetChannelId = "1294260504369303594"; // Replace with your specific channel ID
 
-        const status = interaction.options.getString('status');
-        const reasonVar = interaction.options.getString('reason') || 'No reason provided';
-        const memberAvatar = member.user.displayAvatarURL();
-        const nickname = member.nickname || member.user.username;
+        const status = interaction.data.options?.find(option => option.name === 'status')?.value;
+        const reasonVar = interaction.data.options?.find(option => option.name === 'reason')?.value || 'No reason provided';
+        const memberAvatar = client.user.displayAvatarURL();
+        const nickname = client.member.user.nickname || client.member.user.username;
 
         await interaction.deferReply();
 
@@ -64,7 +70,7 @@ const command = {
     }
 };
 
-// Helper function to update duty status
+// Helper functions remain unchanged
 async function updateDutyStatus(member, addRoleId, removeRoleIds) {
     const guildMember = await member.guild.members.fetch(member.id);
 
@@ -80,7 +86,7 @@ async function createWebhook(channel) {
     try {
         const webhook = await channel.createWebhook({
             name: 'Duty Monitor',
-            avatar: 'https://i.imgur.com/AfFp7pu.png', // Set your desired avatar URL
+            avatar: 'https://i.imgur.com/AfFp7pu.png',
         });
         return webhook;
     } catch (error) {
@@ -105,7 +111,7 @@ async function postToWebhook(interaction, targetChannelId, pretext, memberAvatar
         webhook = await createWebhook(channel);
         if (!webhook) {
             console.log('Failed to create a webhook.');
-            return; // Exit if we couldn't create a webhook
+            return;
         }
     }
 
@@ -129,7 +135,6 @@ async function postToWebhook(interaction, targetChannelId, pretext, memberAvatar
     }
 }
 
-// Function to display current duty statuses
 async function displayCurrentDutyStatuses(interaction) {
     try {
         const availableRoleId = "1293943779656601791";
