@@ -5,7 +5,7 @@ const command = {
     description: "Testing hooks",
     execute: async (interaction, guild) => {
         // Check if the command is executed in the specified guild
-        if (guild.id === "909627161156132914") {
+        if (interaction.guild.id === "909627161156132914") {
             // Get member's avatar and nickname
             const memberAvatar = `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.jpg`;
             let nickname = interaction.member.nick || interaction.member.user.username;
