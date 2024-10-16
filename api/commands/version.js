@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import packge from '../package.json' assert { type: 'json' };
+import packge from '../../package.json' assert { type: 'json' };
 
 
 const command = {

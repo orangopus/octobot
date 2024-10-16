@@ -16,6 +16,7 @@
     "axios": "^1.7.7",
     "body-parser": "^1.20.3",
     "cleverbot.io": "^1.0.4",
+    "discord-interactions": "^4.1.0",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
     "eris": "^0.18.0",
@@ -28,6 +29,7 @@
     "ngrok": "^5.0.0-beta.2",
     "node-fetch": "^3.3.2",
     "openai": "^4.67.3",
+    "path": "^0.12.7",
     "pm2": "^5.4.2",
     "snekfetch": "^4.0.4",
     "ws": "^8.18.0"

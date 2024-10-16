@@ -57,7 +57,7 @@ async function registerGlobalCommands(applicationID, token) {
 
 // Handle slash commands
 async function handleSlashCommand(interaction, options) {
-    const { commandName } = interaction;
+    const commandName = interaction;
 
     if (loadedCommands[commandName]) {
         try {
@@ -70,9 +70,6 @@ async function handleSlashCommand(interaction, options) {
         await interaction.reply({ content: 'Unknown command!', ephemeral: true });
     }
 }
-
-// Load commands on startup
-await loadCommands();
 
 // Export functions for use in your main bot file
 export { registerGlobalCommands, loadCommands, handleSlashCommand };

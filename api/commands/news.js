@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import { SlashCommandBuilder } from 'discord.js';
-import webhooks from '../hooks.json' assert { type: 'json' };
+import webhooks from '../../hooks.json' assert { type: 'json' };
 
 // Webhook URL for news
 const _newsHook = webhooks.newsurl;

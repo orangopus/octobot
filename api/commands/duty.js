@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import fetch from 'node-fetch';
-import webhooks from '../hooks.json' assert { type: 'json' };
+import webhooks from '../../hooks.json' assert { type: 'json' };
 
 const _dutyHook = webhooks.agendaurl; // Webhook URL for duty updates
 

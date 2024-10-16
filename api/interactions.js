@@ -1,60 +1,62 @@
 import express from 'express';
+import {
+  InteractionType,
+  InteractionResponseType,
+  verifyKeyMiddleware,
+} from 'discord-interactions';
+import dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
-import { loadCommands } from './commandhandler.js'; // Function to load commands
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { loadCommands } from "./commandhandler.js"
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-app.use(express.json());
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Initialize Discord bot
-const bot = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ]
-});
+// Middleware to parse JSON for other routes
+app.use(express.json()); // This is for other routes that may require JSON parsing
 
-// Load commands dynamically
+// Mimic __dirname in ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load commands from the commands directory
+const commandPath = path.join(__dirname, 'commands');
 const loadedCommands = {};
+const commandList = [];
 
-// Handle API interactions
-app.post('/api/interactions', async (req, res) => {
-    const interaction = req.body;
+// Middleware to capture raw body for Discord interactions
+app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), (req, res) => {
+    const interaction = JSON.parse(req.rawBody); // Use raw body for interaction
 
-    // Respond to a ping
-    if (interaction.type === 1) {
-        return res.send({ type: 1 });
-    }
-
-    // Handle slash commands
-    if (interaction.type === 2) {
-        const commandName = interaction.data.name;
-        const command = loadedCommands[commandName];
-
-        if (command) {
-            try {
-                await command.execute(interaction);
-                return res.send({ content: 'Command executed successfully!' }); // Respond to the command execution
-            } catch (error) {
-                console.error(`Error executing command ${commandName}:`, error);
-                return res.status(500).json({ content: 'There was an error executing that command!' });
-            }
+    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+        // Check the command name to handle specific commands
+        if (interaction.data.name === 'hello') {
+            res.send({
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                data: {
+                    content: 'Hello world!',
+                },
+            });
         } else {
-            return res.status(404).json({ content: 'Unknown command!' });
+            res.sendStatus(400); // If the command is not recognized
         }
+    } else {
+        res.sendStatus(400); // Optional: handle other interaction types
     }
-
-    return res.sendStatus(400); // Bad Request if no matching type
 });
 
-// Connect the bot and load commands
-(async () => {
-    await loadCommands(); // Ensure loaded commands are set correctly
-    await bot.login(process.env.TOKEN); // Ensure your token is set in the environment variables
-})();
-
-// Start the server
-const PORT = process.env.PORT || 3100;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Log in and start the server
+client.login(process.env.TOKEN).then(() => {
+    loadCommands(); // Ensure you call your loadCommands function
+    app.listen(8999, () => {
+        console.log('Example app listening at http://localhost:8999');
+        console.log('Guild ID:', process.env.GUILD_ID); // Debugging
+    });
+}).catch(error => {
+    console.error('Error logging in:', error);
 });
