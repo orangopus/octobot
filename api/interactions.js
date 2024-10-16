@@ -9,13 +9,20 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadCommands } from "./commandhandler.js"
+import { handleSlashCommand, registerGlobalCommands, loadCommands } from "./commandhandler.js"
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMembers,
+  ]
+});
 
 // Mimic __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -27,18 +34,25 @@ const loadedCommands = {};
 const commandList = [];
 
 // Middleware to capture raw body for Discord interactions
-app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), (req, res) => {
+app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async (req, res) => {
     const interaction = req.body; // Use raw body for interaction
 
     if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-        // Check the command name to handle specific commands
-        if (interaction.data.name === 'hello') {
-            res.send({
-                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                data: {
-                    content: 'Hello world!',
-                },
-            });
+        const commandName = interaction.data.name;
+
+        if (loadedCommands[commandName]) {
+            try {
+                await loadedCommands[commandName].execute(interaction); // Execute the loaded command
+                res.send({
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    data: {
+                        content: `Executed command: ${commandName}`,
+                    },
+                });
+            } catch (error) {
+                console.error(`Error executing command ${commandName}:`, error);
+                res.send({ content: 'There was an error executing that command!', ephemeral: true });
+            }
         } else {
             res.sendStatus(400); // If the command is not recognized
         }
@@ -48,8 +62,10 @@ app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), (req,
 });
 
 // Log in and start the server
-client.login(process.env.TOKEN).then(() => {
-    loadCommands(); // Ensure you call your loadCommands function
+client.login(process.env.TOKEN).then(async () => {
+    await loadCommands(); // Ensure you call your loadCommands function
+    await registerGlobalCommands(client.application.id, process.env.TOKEN); // Pass application ID and token
+
     app.listen(8999, () => {
         console.log('Example app listening at http://localhost:8999');
         console.log('Guild ID:', process.env.GUILD_ID); // Debugging
