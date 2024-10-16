@@ -17,9 +17,6 @@ dotenv.config();
 const app = express();
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Middleware to parse JSON for other routes
-app.use(express.json()); // This is for other routes that may require JSON parsing
-
 // Mimic __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +28,7 @@ const commandList = [];
 
 // Middleware to capture raw body for Discord interactions
 app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), (req, res) => {
-    const interaction = JSON.parse(req.body); // Use raw body for interaction
+    const interaction = req.body; // Use raw body for interaction
 
     if (interaction.type === InteractionType.APPLICATION_COMMAND) {
         // Check the command name to handle specific commands
