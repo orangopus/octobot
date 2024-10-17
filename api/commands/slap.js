@@ -1,39 +1,44 @@
 import { SlashCommandBuilder } from 'discord.js';
+import dotenv from "dotenv";
+
+dotenv.config()
 
 const command = {
   name: "slap",
   description: "Slap someone with a trout.",
-  option: new SlashCommandBuilder()
-    .setName('slap')
-    .setDescription('Slap someone around with a large trout')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('The person to slap')
-        .setRequired(true)
-    ),
+  options: [
+    {
+      type: 6, // 6 is the type for USER option
+      name: 'user',
+      description: 'The user you want to slap',
+      required: true
+    }
+  ],
 
-  async execute(interaction) {
-    const targetUser = interaction.data.options?.find(option => option.name === 'user')?.getUser()
+  async execute(interaction, client, guild, member, options) {
+    // Get the user option from the options array
+    const targetUserId = interaction.data.options.find(option => option.name === 'user').value;
+     // Extract the user ID
+
+    console.log(targetUserId)
 
     // Construct the response
-    const responseMessage = `*slaps ${targetUser} around a bit with a large trout*`;
+    const responseMessage = `*slaps <@${targetUserId}> around a bit with a large trout*`; // Use <@userID> for mentioning
 
     // Send the response back to Discord via a fetch request
-    const responseUrl = `https://discord.com/api/v10/interactions/${interaction.application_id}/${interaction.token}/callback`;
+    const responseUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`; // Use interaction.id instead of application_id
 
-    try {
-      await fetch(responseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bot ${process.env.TOKEN}`, // Ensure you are using the bot token from the environment
-        },
-        body: JSON.stringify(responseMessage)
-      });
-
-    } catch (error) {
-      console.error('Error sending slap response:', error);
-    }
+            // Respond with the embed
+            await fetch(responseUrl, {
+              method: 'PATCH',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bot ${process.env.TOKEN}`
+              },
+              body: JSON.stringify({
+                  content: responseMessage
+              })
+          });
   }
 };
 

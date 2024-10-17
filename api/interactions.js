@@ -56,7 +56,7 @@ const registerSlashCommands = async () => {
         const slashCommands = loadedCommands.map(command => ({
             name: command.name,
             description: command.description,
-            options: command.options
+            options: command.options // Ensure the command's options are passed if available
         }));
 
         // Registering commands for a specific guild (you can also use Routes.applicationCommands(clientId) to register globally)
@@ -71,7 +71,6 @@ const registerSlashCommands = async () => {
     }
 };
 
-// Middleware to capture raw body for Discord interactions
 app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async (req, res) => {
     const interaction = req.body; // Access the interaction from the request body
   
@@ -93,12 +92,15 @@ app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async
             const guildId = interaction.guild_id;
             const guild = await client.guilds.fetch(guildId); // Fetch the guild object
             const member = await guild.members.fetch(interaction.member.user.id); // Fetch the member object
-  
-            // Now execute the command (e.g., from commandHandler)
-            const commandName = interaction.data.name; // Make sure to access the correct property
+
+            // Extract options from the interaction
+            const options = interaction.options || []; // Ensure options are retrieved
+
+            // Now execute the command
+            const commandName = interaction.data.name; // Access the command name
             const command = loadedCommands.find(cmd => cmd.name === commandName); // Find the command
             if (command) {
-                await command.execute(interaction, client, guild, member); // Pass the member object to the command
+                await command.execute(interaction, client, guild, member, options); // Pass the member object to the command
             }
             res.sendStatus(200);
         } catch (error) {
