@@ -6,7 +6,6 @@ import { InteractionType, InteractionResponseType, verifyKeyMiddleware } from 'd
 
 // Initialize the Express app
 const app = express();
-app.use(express.json()); // Middleware to parse JSON body
 
 const _dutyHook = webhooks.agendaurl; // Webhook URL for duty updates
 
@@ -24,81 +23,96 @@ const command = {
             option.setName('reason')
                 .setDescription('Reason for the status change')
                 .setRequired(false)),
-    
+
     async execute(interaction, client) {
-        const { member, guildId, token } = interaction;
+        const { guildId, token } = interaction;
         const availableRoleId = "1293943779656601791";
         const unavailableRoleId = "1293943830638493767";
         const idleRoleId = "1293963252736462929";
         const guildIdTarget = "909627161156132914"; // Replace with your guild ID
         const targetChannelId = "1294260504369303594"; // Replace with your specific channel ID
 
+        // Fetch the member from the guild
+        const guild = await client.guilds.fetch(guildId);
+        const member = await guild.members.fetch(interaction.member.user.id); // Ensure you're getting the member object
+
         const status = interaction.data.options?.find(option => option.name === 'status')?.value;
         const reasonVar = interaction.data.options?.find(option => option.name === 'reason')?.value || 'No reason provided';
-        const memberAvatar = member.user.displayAvatarURL();
+        const memberAvatar = member.user.displayAvatarURL(); // Use member's avatar
         const nickname = member.nickname || member.user.username;
-
-        if (interaction.guildId !== guildIdTarget) {
-            // Sending a response indicating that the command can only be used in the designated guild
-            return sendResponse(token, { content: "This command can only be used in the designated guild.", ephemeral: true });
-        }
 
         try {
             let responseMessage;
 
-            if (status === 'on') {
-                await updateDutyStatus(member, availableRoleId, [unavailableRoleId, idleRoleId]);
-                responseMessage = `:white_check_mark: \`Duty status changed to available. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
-                await postToWebhook(interaction, targetChannelId, `${nickname} is now on duty!`, memberAvatar, reasonVar, '#1f9e4a');
-
-            } else if (status === 'idle') {
-                await updateDutyStatus(member, idleRoleId, [availableRoleId, unavailableRoleId]);
-                responseMessage = `:white_check_mark: \`Duty status changed to idle. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
-                await postToWebhook(interaction, targetChannelId, `${nickname} is now idle!`, memberAvatar, reasonVar, '#FFA500');
-
-            } else if (status === 'off') {
-                await updateDutyStatus(member, unavailableRoleId, [availableRoleId, idleRoleId]);
-                responseMessage = `:white_check_mark: \`Duty status changed to unavailable. Reason: ${reasonVar}. Remember to clock on when you return, ${nickname}!\``;
-                await postToWebhook(interaction, targetChannelId, `${nickname} is now off duty!`, memberAvatar, reasonVar, '#f33838');
-
-            } else {
-                await displayCurrentDutyStatuses(interaction); // This needs to be modified similarly for response
-                return; // Exit to avoid sending multiple responses
+            switch (status) {
+                case 'on':
+                    await updateDutyStatus(member, availableRoleId, [unavailableRoleId, idleRoleId]);
+                    responseMessage = `:white_check_mark: \`Duty status changed to available. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
+                    await postToWebhook(interaction, targetChannelId, `${nickname} is now on duty!`, memberAvatar, reasonVar, '#1f9e4a');
+                    break;
+                case 'idle':
+                    await updateDutyStatus(member, idleRoleId, [availableRoleId, unavailableRoleId]);
+                    responseMessage = `:white_check_mark: \`Duty status changed to idle. Reason: ${reasonVar}. Remember to clock off, ${nickname}!\``;
+                    await postToWebhook(interaction, targetChannelId, `${nickname} is now idle!`, memberAvatar, reasonVar, '#FFA500');
+                    break;
+                case 'off':
+                    await updateDutyStatus(member, unavailableRoleId, [availableRoleId, idleRoleId]);
+                    responseMessage = `:white_check_mark: \`Duty status changed to unavailable. Reason: ${reasonVar}. Remember to clock on when you return, ${nickname}!\``;
+                    await postToWebhook(interaction, targetChannelId, `${nickname} is now off duty!`, memberAvatar, reasonVar, '#f33838');
+                    break;
+                default:
+                    await displayCurrentDutyStatuses(interaction, guild); // Pass guild for role checking
+                    return; // Exit to avoid sending multiple responses
             }
 
             // Send the response
-            await sendResponse(token, { content: responseMessage });
+            await sendResponse(interaction, token, { content: responseMessage });
         } catch (error) {
             console.error('Error executing duty command:', error);
-            await sendResponse(token, { content: 'There was an error while executing the command.', ephemeral: true });
+            await sendResponse(interaction, token, { content: 'There was an error while executing the command.', ephemeral: true });
         }
     }
 };
 
 // Function to send response to interaction
-async function sendResponse(token, data) {
-    await fetch(`https://discord.com/api/v10/interactions/${interaction.id}/${token}/callback`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            type: InteractionResponseType.ChannelMessageWithSource,
-            data: data,
-        }),
-    });
+async function sendResponse(interaction, token, data) {
+    try {
+        await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bot ${process.env.TOKEN}`
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (error) {
+        console.error('Error sending response:', error);
+    }
 }
 
-// Helper functions remain unchanged
+// Helper functions
 async function updateDutyStatus(member, addRoleId, removeRoleIds) {
-    const guildMember = await member.guild.members.fetch(member.id);
+    const guildMember = member; // Use the member object passed as a parameter
 
+    // Remove roles from the member
     for (const roleId of removeRoleIds) {
         if (guildMember.roles.cache.has(roleId)) {
-            await guildMember.roles.remove(roleId).catch(console.error);
+            try {
+                await guildMember.roles.remove(roleId); // Remove the role
+                console.log(`Removed role: ${roleId} from ${guildMember.displayName}`);
+            } catch (error) {
+                console.error(`Failed to remove role ${roleId}:`, error);
+            }
         }
     }
-    await guildMember.roles.add(addRoleId).catch(console.error);
+
+    // Add the new role to the member
+    try {
+        await guildMember.roles.add(addRoleId); // Add the new role
+        console.log(`Added role: ${addRoleId} to ${guildMember.displayName}`);
+    } catch (error) {
+        console.error(`Failed to add role ${addRoleId}:`, error);
+    }
 }
 
 async function createWebhook(channel) {
@@ -116,7 +130,7 @@ async function createWebhook(channel) {
 
 async function postToWebhook(interaction, targetChannelId, pretext, memberAvatar, reasonVar, color) {
     const channel = await interaction.guild.channels.fetch(targetChannelId);
-    
+
     if (!channel) {
         console.log('Invalid channel or channel not found!');
         return;
@@ -154,43 +168,34 @@ async function postToWebhook(interaction, targetChannelId, pretext, memberAvatar
     }
 }
 
-async function displayCurrentDutyStatuses(interaction) {
+async function displayCurrentDutyStatuses(interaction, guild) {
     try {
         const availableRoleId = "1293943779656601791";
         const idleRoleId = "1293963252736462929";
         const unavailableRoleId = "1293943830638493767";
-
-        const guild = interaction.guild;
 
         const availableRole = guild.roles.cache.get(availableRoleId);
         const idleRole = guild.roles.cache.get(idleRoleId);
         const unavailableRole = guild.roles.cache.get(unavailableRoleId);
 
         if (!availableRole || !idleRole || !unavailableRole) {
-            return interaction.editReply({ content: 'Error: One or more duty roles do not exist in this server.', ephemeral: true });
+            return sendResponse(interaction, interaction.token, { content: 'Error: One or more duty roles do not exist in this server.', ephemeral: true });
         }
 
         const availableMembersList = availableRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
         const idleMembersList = idleRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
         const unavailableMembersList = unavailableRole.members.map(member => member.nickname || member.user.username).join(', ') || "No members";
 
-        const dutyStatusEmbed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setTitle('Team Duty Statuses')
-            .setDescription('Here are the current duty statuses of the team members:')
-            .addFields(
-                { name: `**:green_circle: On Duty (${availableRole.members.size})**`, value: availableMembersList, inline: false },
-                { name: `**:yellow_circle: Idle (${idleRole.members.size})**`, value: idleMembersList, inline: false },
-                { name: `**:red_circle: Off Duty (${unavailableRole.members.size})**`, value: unavailableMembersList, inline: false }
-            )
-            .setTimestamp()
-            .setFooter({ text: 'Duty status updated', iconURL: guild.iconURL() });
+        const responseMessage = `
+        **Duty Statuses:**
+        - **Available**: ${availableMembersList}
+        - **Idle**: ${idleMembersList}
+        - **Unavailable**: ${unavailableMembersList}
+        `;
 
-        await interaction.editReply({ embeds: [dutyStatusEmbed] });
+        await sendResponse(interaction, interaction.token, { content: responseMessage });
     } catch (error) {
-        console.error('Error displaying duty statuses:', error);
-        await interaction.editReply({ content: 'There was an error fetching duty statuses.', ephemeral: true });
+        console.error('Error displaying current duty statuses:', error);
+        await sendResponse(interaction, interaction.token, { content: 'There was an error fetching the duty statuses.', ephemeral: true });
     }
 }
-
-export default command;

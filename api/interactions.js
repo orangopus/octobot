@@ -5,7 +5,7 @@ import {
     verifyKeyMiddleware,
 } from 'discord-interactions';
 import dotenv from 'dotenv';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -29,69 +29,91 @@ const __dirname = path.dirname(__filename);
 
 // Load commands from the commands directory
 const commandPath = path.join(__dirname, 'commands');
-const loadedCommands = {};
+const loadedCommands = [];
 
 // Example loadCommands function
 const loadCommands = async () => {
-  const files = fs.readdirSync(commandPath).filter(file => file.endsWith('.js')); // Only load .js files
+    const files = fs.readdirSync(commandPath).filter(file => file.endsWith('.js')); // Only load .js files
 
-  for (const file of files) {
-      const command = (await import(path.join(commandPath, file))).default;
+    for (const file of files) {
+        const command = (await import(path.join(commandPath, file))).default;
 
-      // Validate command structure
-      if (command && command.name && command.description && typeof command.execute === 'function') {
-          loadedCommands[command.name] = command; // Store command in loadedCommands
-          console.log(`Loaded command: ${command.name}`);
-      } else {
-          console.warn(`Command file ${file} is missing required fields. Command:`, command);
-      }
-  }
+        // Validate command structure
+        if (command && command.name && command.description && typeof command.execute === 'function') {
+            loadedCommands.push(command); // Store command in loadedCommands array for registration
+            console.log(`Loaded command: ${command.name}`);
+        } else {
+            console.warn(`Command file ${file} is missing required fields. Command:`, command);
+        }
+    }
+};
+
+// Register Slash Commands to Discord
+const registerSlashCommands = async () => {
+    try {
+        const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+        const slashCommands = loadedCommands.map(command => ({
+            name: command.name,
+            description: command.description,
+            options: command.options
+        }));
+
+        // Registering commands for a specific guild (you can also use Routes.applicationCommands(clientId) to register globally)
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.APPLICATION_ID, process.env.GUILD_ID),
+            { body: slashCommands }
+        );
+
+        console.log('Slash commands registered successfully!');
+    } catch (error) {
+        console.error('Error registering slash commands:', error);
+    }
 };
 
 // Middleware to capture raw body for Discord interactions
-// Middleware to capture raw body for Discord interactions
-app.use(express.json()); // Make sure to parse JSON body
-
 app.post('/api/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async (req, res) => {
-  const interaction = req.body;
-
-  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-      try {
-          // Defer the reply immediately
-          await fetch(`https://discord.com/api/v10/interactions/${interaction.id}/${interaction.token}/callback`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bot ${process.env.TOKEN}`
-              },
-              body: JSON.stringify({
-                  type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-              })
-          });
-
-          // Get the guild ID from the interaction
-          const guildId = interaction.guild_id;
-          const guild = await client.guilds.fetch(guildId); // Fetch the guild object
-
-          // Now execute the command (e.g., from commandHandler)
-          const commandName = interaction.data.name;
-          if (loadedCommands[commandName]) {
-              await loadedCommands[commandName].execute(interaction, client, guild); // Pass the member count if needed
-          }
-          res.sendStatus(200);
-      } catch (error) {
-          console.error(`Error executing command ${interaction.data.name}:`, error);
-          res.sendStatus(500);
-      }
-  } else {
-      res.sendStatus(400);
-  }
+    const interaction = req.body; // Access the interaction from the request body
+  
+    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+        try {
+            // Defer the reply immediately
+            await fetch(`https://discord.com/api/v10/interactions/${interaction.id}/${interaction.token}/callback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bot ${process.env.TOKEN}`
+                },
+                body: JSON.stringify({
+                    type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                })
+            });
+  
+            // Get the guild ID from the interaction
+            const guildId = interaction.guild_id;
+            const guild = await client.guilds.fetch(guildId); // Fetch the guild object
+            const member = await guild.members.fetch(interaction.member.user.id); // Fetch the member object
+  
+            // Now execute the command (e.g., from commandHandler)
+            const commandName = interaction.data.name; // Make sure to access the correct property
+            const command = loadedCommands.find(cmd => cmd.name === commandName); // Find the command
+            if (command) {
+                await command.execute(interaction, client, guild, member); // Pass the member object to the command
+            }
+            res.sendStatus(200);
+        } catch (error) {
+            console.error(`Error executing command ${interaction.data.name}:`, error);
+            res.sendStatus(500);
+        }
+    } else {
+        res.sendStatus(400);
+    }
 });
-
 
 // Log in and start the server
 client.login(process.env.TOKEN).then(async () => {
-  await loadCommands(); // Ensure you call your loadCommands function
+    await loadCommands(); // Ensure you call your loadCommands function
+    await registerSlashCommands(); // Register the slash commands to Discord
     app.listen(8999, () => {
         console.log('Example app listening at http://localhost:8999');
         console.log('Guild ID:', process.env.GUILD_ID); // Debugging

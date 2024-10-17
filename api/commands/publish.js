@@ -30,10 +30,17 @@ const command = {
                         .setDescription('Select the webhook to update (rules/welcome)')
                         .setRequired(true))),
     
-    async execute(interaction) {
-        const subcommand = interaction.options.getSubcommand();
-        const messageId = interaction.options.getString('message_id');
-        const webhookSelection = interaction.options.getString('webhook');
+    async execute(interaction, client) {
+        const subcommand = interaction.data.options.find(option => option.type === 1); // Type 1 is for subcommands
+        const messageId = interaction.data.options.find(option => option.name === 'message_id')?.value;
+        const webhookSelection = interaction.data.options.find(option => option.name === 'webhook')?.value;    
+
+        // Get the guild object from the interaction
+    const guildId = interaction.guild_id;
+    const guild = await client.guilds.fetch(guildId); // Ensure this is awaited
+    const serverIconURL = guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : null;
+    const embedColor = guild.members.me.displayColor || '#0099ff'; // Use a default color if necessary
+
 
         try {
             // Fetch the Markdown files
@@ -50,11 +57,6 @@ const command = {
             const formattedContentWelcome = markdownContentWelcome.length > 2048 
                 ? markdownContentWelcome.substring(0, 2045) + '...' // Discord embed description limit
                 : markdownContentWelcome;
-
-            // Get the guild (server) color and icon
-            const guild = interaction.guild;
-            const serverIconURL = guild.iconURL(); // Get the server icon URL
-            const embedColor = guild.members.me.displayColor || '#0099ff'; // Get the bot's display color
 
             // Create embeds for both webhooks
             const embedMain = new EmbedBuilder()
@@ -101,21 +103,58 @@ const command = {
 
             // Handle 'update' subcommand: Update an existing webhook message
             } else if (subcommand === 'update') {
-                let webhookClient;
+                let webhookUrl;
                 let embedToUpdate;
 
                 if (webhookSelection === 'rules') {
-                    webhookClient = new WebhookClient({ url: WEBHOOK_URL });
+                    webhookUrl = WEBHOOK_URL;
                     embedToUpdate = embedMain;
                 } else if (webhookSelection === 'welcome') {
-                    webhookClient = new WebhookClient({ url: WEBHOOK_URL_WELCOME });
+                    webhookUrl = WEBHOOK_URL_WELCOME;
                     embedToUpdate = embedWelcome;
                 } else {
                     return interaction.reply('Invalid webhook selected.');
                 }
 
-                // Edit the existing message with the new content
-                await webhookClient.editMessage(messageId, { embeds: [embedToUpdate] });
+                // Construct the buttons to add
+                const buttons = [
+                    {
+                        type: 2, // Button type
+                        style: 1, // Primary button style
+                        label: 'Button 1',
+                        custom_id: 'button_1_id',
+                    },
+                    {
+                        type: 2, // Button type
+                        style: 2, // Secondary button style
+                        label: 'Button 2',
+                        custom_id: 'button_2_id',
+                    },
+                ];
+
+                // Edit the existing message with the new content and buttons
+                const response = await fetch(`${webhookUrl}/messages/${messageId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        embeds: [embedToUpdate], // Update the embed
+                        components: [
+                            {
+                                type: 1, // ActionRow type
+                                components: buttons, // New buttons
+                            },
+                        ],
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`Error updating message: ${response.status} ${errorText}`);
+                    return interaction.reply('Failed to update the message.');
+                }
+
                 await interaction.reply(`Message ${messageId} updated successfully in the ${webhookSelection} webhook.`);
             }
         } catch (error) {
